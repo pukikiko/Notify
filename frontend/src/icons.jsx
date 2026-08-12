@@ -1,189 +1,53 @@
-import React from 'react'
+import { Home, Search, Library, Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Heart, Volume2, ListMusic, MonitorSpeaker, Plus, Ellipsis, ChevronLeft, ChevronRight, Clock, Settings, Check, Download, RefreshCw, X, LogOut } from 'lucide-react'
 
-function Svg({ children, size = 24, className = '', fill = 'currentColor', viewBox = '0 0 24 24', style }) {
-  return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      viewBox={viewBox}
-      fill={fill}
-      style={style}
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  )
-}
+export const HomeIcon = (p) => <Home {...p} />
 
-export const HomeIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12.6 2.63a1.75 1.75 0 0 0-2.47 0L2.5 10.25a.75.75 0 0 0 .53 1.28H4v8A1.75 1.75 0 0 0 5.75 21.3h12.5A1.75 1.75 0 0 0 20 21.3v-8h.97a.75.75 0 0 0 .53-1.28l-7.9-7.62Zm-5.35 9.62h9.5v8.5h-9.5v-8.5Z" />
-  </Svg>
-)
+export const SearchIcon = (p) => <Search {...p} />
 
-export const SearchIcon = (p) => (
-  <Svg {...p}>
-    <path d="M10.53 1.28a9.25 9.25 0 1 0 0 18.5 9.25 9.25 0 0 0 0-18.5Zm-7.53 9.25a7.53 7.53 0 1 1 15.06 0 7.53 7.53 0 0 1-15.06 0Z" />
-    <path d="M21.7 21.7a1.06 1.06 0 0 1-1.5 0l-3.34-3.34a1.06 1.06 0 1 1 1.5-1.5l3.34 3.34a1.06 1.06 0 0 1 0 1.5Z" />
-  </Svg>
-)
+export const LibraryIcon = (p) => <Library {...p} />
 
-export const LibraryIcon = (p) => (
-  <Svg {...p}>
-    <path d="M14.5 2.13c0-1.02-.74-1.88-1.75-1.88-.99 0-1.75.86-1.75 1.88v16.74c0 1.02.76 1.88 1.75 1.88 1.01 0 1.75-.86 1.75-1.88V2.13ZM5.89 3.27c-1-.22-1.95.34-2.22 1.27L.55 15.95c-.28 1.03.33 2.07 1.33 2.3 1 .22 1.95-.34 2.22-1.28l3.12-11.4c.28-1.03-.33-2.07-1.33-2.3ZM21.01 5.15c.28-1.03-.33-2.07-1.33-2.3-1-.22-1.95.34-2.22 1.28L13.34 15.5c-.28 1.03.33 2.07 1.33 2.3 1 .22 1.95-.34 2.22-1.28l3.12-11.4v.03Z" />
-    <path d="M4 20.08c-.97.26-1.95-.34-2.17-1.35-.22-1.02.35-2.04 1.32-2.3.97-.27 1.95.34 2.17 1.35.22 1.02-.35 2.04-1.32 2.3Zm11.5 0c-.97.26-1.95-.34-2.17-1.35-.22-1.02.35-2.04 1.32-2.3.97-.27 1.95.34 2.17 1.35.22 1.02-.35 2.04-1.32 2.3Z" />
-  </Svg>
-)
+export const PlayIcon = (p) => <Play {...p} />
 
-export const PlayIcon = (p) => (
-  <Svg {...p}>
-    <path d="M3 1.71a.7.7 0 0 1 1.05-.6l10.9 6.29a.7.7 0 0 1 0 1.2L4.05 14.9A.7.7 0 0 1 3 14.29V1.71Z" />
-  </Svg>
-)
+export const PauseIcon = (p) => <Pause {...p} />
 
-export const PauseIcon = (p) => (
-  <Svg {...p}>
-    <path d="M2.7 1a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7H2.7Zm8 0a.7.7 0 0 0-.7.7v12.6a.7.7 0 0 0 .7.7h2.6a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-2.6Z" />
-  </Svg>
-)
+export const PrevIcon = (p) => <SkipBack {...p} />
 
-export const PrevIcon = (p) => (
-  <Svg {...p}>
-    <path d="M3.3 1a.7.7 0 0 1 .7.7v5.6l9.96-6.06a.7.7 0 0 1 1.04.6v19.32a.7.7 0 0 1-1.04.6L4 15.7v5.6a.7.7 0 0 1-.7.7H2.2a.7.7 0 0 1-.7-.7V1.7a.7.7 0 0 1 .7-.7h1.1Z" />
-  </Svg>
-)
+export const NextIcon = (p) => <SkipForward {...p} />
 
-export const NextIcon = (p) => (
-  <Svg {...p}>
-    <path d="M20.7 1a.7.7 0 0 0-.7.7v5.6L10.04 1.24A.7.7 0 0 0 9 1.84v19.32a.7.7 0 0 0 1.04.6L20 15.7v5.6a.7.7 0 0 0 .7.7h1.1a.7.7 0 0 0 .7-.7V1.7a.7.7 0 0 0-.7-.7h-1.1Z" />
-  </Svg>
-)
+export const ShuffleIcon = (p) => <Shuffle {...p} />
 
-export const ShuffleIcon = (p) => (
-  <Svg {...p}>
-    <path d="M18.66 4.44a.73.73 0 0 1 1.03 0l1.06 1.05a.73.73 0 0 1 0 1.03l-1.06 1.06a.73.73 0 1 1-1.03-1.03l.55-.55-.55-.55a.73.73 0 0 1 0-1.03ZM17.2 7.9a.73.73 0 0 1 1.03 0l2.77 2.78a.73.73 0 0 1 0 1.03l-2.77 2.79a.73.73 0 0 1-1.03-1.03l2.26-2.27-2.26-2.27a.73.73 0 0 1 0-1.03ZM1.75 6.5c0-.4.33-.73.73-.73h7.5c1.4 0 2.7.94 3.18 2.32l.12.33.95-.95a.73.73 0 0 1 1.03 0l2.12 2.13a.73.73 0 0 1 0 1.03l-2.12 2.13a.73.73 0 0 1-1.03-1.03l.95-.95-.12-.33A1.78 1.78 0 0 0 9.98 8.22h-7.5a.73.73 0 0 1-.73-.73v-1Z" />
-  </Svg>
-)
+export const RepeatIcon = (p) => <Repeat {...p} />
 
-export const RepeatIcon = (p) => (
-  <Svg {...p}>
-    <path d="M6.68 2.87a.75.75 0 0 0-1.06 0l-1.6 1.6h-.02l.36-.36a.75.75 0 0 0-1.06-1.06l-1.62 1.6a.75.75 0 0 0 0 1.06l1.62 1.62a.75.75 0 1 0 1.06-1.06l-.36-.36h.02l1.6 1.6a.75.75 0 0 0 1.06-1.06l-1.6-1.6v-.02l.36-.36a.75.75 0 0 0 0-1.06ZM3.2 9.5a.75.75 0 0 1 .75.75v4.5a2.25 2.25 0 0 0 2.25 2.25h11.3l-1.6-1.6a.75.75 0 0 1 1.06-1.06l2.9 2.9a.75.75 0 0 1 0 1.06l-2.9 2.9a.75.75 0 1 1-1.06-1.06l1.6-1.6H6.2a3.75 3.75 0 0 1-3.75-3.75v-4.5a.75.75 0 0 1 .75-.75ZM20.8 9.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-1.5 0v-.5a.75.75 0 0 1 .75-.75ZM20.8 5.5a.75.75 0 0 1 .75.75v.5a.75.75 0 0 1-1.5 0v-.5a.75.75 0 0 1 .75-.75Z" />
-  </Svg>
-)
+export const RepeatOneIcon = (p) => <Repeat1 {...p} />
 
-export const RepeatOneIcon = (p) => (
-  <Svg {...p}>
-    <path d="M3.63 2.72A.75.75 0 0 1 4.75 2h.01l.08.002c.14.004.33.014.55.037.44.046 1.06.148 1.71.378.13.045.25.1.37.156l1.02.5a.75.75 0 1 1-.7 1.33l-1-.48A6.6 6.6 0 0 0 6.6 3.7l-.14-.05c-.45-.18-.83-.25-1.11-.28a6.35 6.35 0 0 1-.6-.05v.05a.75.75 0 0 1-1.12-.65ZM1.5 10.25A.75.75 0 0 1 2.25 9.5h.01l.1.003.31.014a.75.75 0 1 1-.12 1.5l-.3-.02h-.5v.01a.75.75 0 0 1-.25-1.46ZM20.38 4.69a.75.75 0 0 1 1.06 0l1.6 1.6a.75.75 0 0 1 0 1.06l-1.6 1.6a.75.75 0 1 1-1.06-1.06l.27-.27-.02-.03H7.5a.75.75 0 0 1 0-1.5h13.63l-.27-.28a.75.75 0 0 1 0-1.06ZM22 17.5a.75.75 0 0 1-.75.75h-2.44l.22.22a.75.75 0 1 1-1.06 1.06l-1.6-1.6a.75.75 0 0 1 0-1.06l1.6-1.6a.75.75 0 1 1 1.06 1.06l-.22.22h2.44a.75.75 0 0 1 .75.75Z" />
-    <path d="M3.75 14.25A.75.75 0 0 0 3 15v.01l.003.1a.75.75 0 0 0 1.5-.1v-1.1a.75.75 0 0 0-.75-.75Z" />
-  </Svg>
-)
+export const HeartIcon = (p) => <Heart {...p} />
 
-export const HeartIcon = (p) => (
-  <Svg {...p}>
-    <path d="M11.94 19.72a.75.75 0 0 1-.8-.07c-4.55-3.52-7.89-6.28-7.89-10.3A4.72 4.72 0 0 1 8.06 4.5c1.44 0 2.9.7 3.94 2.4a.75.75 0 0 0 1.32 0c1.04-1.7 2.5-2.4 3.94-2.4a4.72 4.72 0 0 1 4.81 4.85c0 4.02-3.34 6.78-7.89 10.3a.75.75 0 0 1-.8.07Z" />
-  </Svg>
-)
+export const HeartFilledIcon = (p) => <Heart {...p} fill="currentColor" />
 
-export const HeartFilledIcon = (p) => (
-  <Svg {...p}>
-    <path d="M21.74 3.6a5.82 5.82 0 0 0-8.23 0L12 5.1l-1.51-1.5a5.82 5.82 0 0 0-8.23 8.23L12 21.57l9.74-9.74a5.82 5.82 0 0 0 0-8.23Z" />
-  </Svg>
-)
+export const VolumeIcon = (p) => <Volume2 {...p} />
 
-export const VolumeIcon = (p) => (
-  <Svg {...p}>
-    <path d="M3 9.5a.75.75 0 0 0-.75.75v3.5A.75.75 0 0 0 3 14.5h2.53l2.92 2.53a.75.75 0 0 0 1.3-.53V6.5a.75.75 0 0 0-1.3-.53L5.53 8.5H3Zm13.5 2.5c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02ZM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77Z" />
-  </Svg>
-)
+export const QueueIcon = (p) => <ListMusic {...p} />
 
-export const QueueIcon = (p) => (
-  <Svg {...p}>
-    <path d="M2.75 5h13.5a.75.75 0 0 0 0-1.5H2.75a.75.75 0 0 0 0 1.5Zm0 5h13.5a.75.75 0 0 0 0-1.5H2.75a.75.75 0 0 0 0 1.5Zm0 5h9.5a.75.75 0 0 0 0-1.5h-9.5a.75.75 0 0 0 0 1.5Zm13.5 3.19-4.12-2.63a.75.75 0 0 1 0-1.25l4.12-2.63a.75.75 0 0 1 1.15.63v5.25a.75.75 0 0 1-1.15.63Z" />
-  </Svg>
-)
+export const DevicesIcon = (p) => <MonitorSpeaker {...p} />
 
-export const DevicesIcon = (p) => (
-  <Svg {...p}>
-    <path d="M4 3h13a1 1 0 0 1 1 1v3a1 1 0 0 1-2 0V5H5v10h6a1 1 0 0 1 0 2H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm9.5 7h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1Zm2 3.5a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z" />
-  </Svg>
-)
+export const PlusIcon = (p) => <Plus {...p} />
 
-export const PlusIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 5a.75.75 0 0 1 .75.75v5.5h5.5a.75.75 0 0 1 0 1.5h-5.5v5.5a.75.75 0 0 1-1.5 0v-5.5h-5.5a.75.75 0 0 1 0-1.5h5.5v-5.5A.75.75 0 0 1 12 5Z" />
-  </Svg>
-)
+export const DotsIcon = (p) => <Ellipsis {...p} />
 
-export const DotsIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 9a1.75 1.75 0 1 0 0 3.5A1.75 1.75 0 0 0 12 9Zm4.5 0a1.75 1.75 0 1 0 0 3.5A1.75 1.75 0 0 0 16.5 9ZM7.5 9a1.75 1.75 0 1 0 0 3.5A1.75 1.75 0 0 0 7.5 9Z" />
-  </Svg>
-)
+export const ArrowLeftIcon = (p) => <ChevronLeft {...p} />
 
-export const ArrowLeftIcon = (p) => (
-  <Svg {...p}>
-    <path d="M15.54 3.98 8.4 11.13a1 1 0 0 0 0 1.41l7.14 7.15a1.2 1.2 0 0 0 1.7-1.7l-6.3-6.3 6.3-6.3a1.2 1.2 0 0 0-1.7-1.7Z" />
-  </Svg>
-)
+export const ArrowRightIcon = (p) => <ChevronRight {...p} />
 
-export const ArrowRightIcon = (p) => (
-  <Svg {...p}>
-    <path d="M8.46 3.98 15.6 11.13a1 1 0 0 1 0 1.41l-7.14 7.15a1.2 1.2 0 0 1-1.7-1.7l6.3-6.3-6.3-6.3a1.2 1.2 0 0 1 1.7-1.7Z" />
-  </Svg>
-)
+export const ClockIcon = (p) => <Clock {...p} />
 
-export const ClockIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 1.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17Zm0 2.25a.75.75 0 0 0-.75.75V12a.75.75 0 0 0 .34.63l4.5 3a.75.75 0 0 0 .82-1.26l-4.16-2.77V6.5a.75.75 0 0 0-.75-.75Z" />
-  </Svg>
-)
+export const SettingsIcon = (p) => <Settings {...p} />
 
-export const RadioIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm-6.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Zm4 0a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0Z" />
-  </Svg>
-)
+export const CheckIcon = (p) => <Check {...p} />
 
-export const SettingsIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 1.75a10.25 10.25 0 0 0 0 20.5 10.25 10.25 0 0 0 0-20.5Zm0 1.5a8.75 8.75 0 1 1 0 17.5 8.75 8.75 0 0 1 0-17.5Zm0 3a1 1 0 0 0-.87.5l-3.44 5.96a1 1 0 0 0 .87 1.5h6.88a1 1 0 0 0 .87-1.5l-3.44-5.96a1 1 0 0 0-.87-.5Zm0 2.02 1.72 2.98H10.28L12 8.27Z" />
-  </Svg>
-)
+export const DownloadIcon = (p) => <Download {...p} />
 
-export const CheckIcon = (p) => (
-  <Svg {...p}>
-    <path d="M9.16 17.02 4.13 11.99a1.2 1.2 0 0 0-1.7 1.7l5.87 5.88a1.2 1.2 0 0 0 1.7 0L19.83 6.4a1.2 1.2 0 1 0-1.7-1.7L9.16 17.02Z" />
-  </Svg>
-)
+export const RefreshIcon = (p) => <RefreshCw {...p} />
 
-export const DownloadIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 2.75a.75.75 0 0 1 .75.75v9.44l2.5-2.5a.75.75 0 0 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0l-3.75-3.75a.75.75 0 1 1 1.06-1.06l2.44 2.44V3.5a.75.75 0 0 1 .75-.75ZM4.5 14.25a.75.75 0 0 1 .75.75v3a1 1 0 0 0 1 1h11.5a1 1 0 0 0 1-1v-3a.75.75 0 0 1 1.5 0v3a2.5 2.5 0 0 1-2.5 2.5H6.25a2.5 2.5 0 0 1-2.5-2.5v-3a.75.75 0 0 1 .75-.75Z" />
-  </Svg>
-)
+export const CloseIcon = (p) => <X {...p} />
 
-export const RefreshIcon = (p) => (
-  <Svg {...p}>
-    <path d="M12 3a9 9 0 1 0 8.5 12.3l-.9-.44A7.5 7.5 0 1 1 12 4.5v2.75a.75.75 0 0 0 1.22.58l4-3.25a.75.75 0 0 0 0-1.16l-4-3.25A.75.75 0 0 0 12 1.75V3Z" />
-  </Svg>
-)
-
-export const CloseIcon = (p) => (
-  <Svg {...p}>
-    <path d="M4.22 4.22a.75.75 0 0 1 1.06 0L12 10.94l6.72-6.72a.75.75 0 1 1 1.06 1.06L13.06 12l6.72 6.72a.75.75 0 1 1-1.06 1.06L12 13.06l-6.72 6.72a.75.75 0 0 1-1.06-1.06L10.94 12 4.22 5.28a.75.75 0 0 1 0-1.06Z" />
-  </Svg>
-)
-
-export const LogoutIcon = (p) => (
-  <Svg {...p}>
-    <path d="M13.5 4.5a1 1 0 0 0-1-1H6.25A2.25 2.25 0 0 0 4 5.75v12.5A2.25 2.25 0 0 0 6.25 20.5H12.5a1 1 0 0 0 1-1V18a1 1 0 0 0-2 0v1H6.25a.25.25 0 0 1-.25-.25V5.75A.25.25 0 0 1 6.25 5.5h6.25v1a1 1 0 0 0 2 0v-2Zm2.1 2.9a1 1 0 0 0-1.41 1.41l3.08 3.08H10.5a1 1 0 0 0 0 2h6.77l-3.08 3.08a1 1 0 1 0 1.41 1.41l4.75-4.75a1 1 0 0 0 0-1.41l-4.75-4.75Z" />
-  </Svg>
-)
-
-export const NotifyLogo = ({ size = 24, className = '' }) => (
-  <svg className={className} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-    <circle cx="12" cy="12" r="12" fill="var(--sp-green)" />
-    <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4v3a4 4 0 1 0 2 3.46V3h-8z" fill="#fff" transform="translate(2.6 2.6) scale(0.78)" />
-  </svg>
-)
+export const LogoutIcon = (p) => <LogOut {...p} />

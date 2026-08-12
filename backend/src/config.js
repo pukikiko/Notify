@@ -8,6 +8,8 @@ export const CACHE_DIR = path.join(DATA_DIR, 'cache')
 export const ORIGINAL_DIR = path.join(CACHE_DIR, 'original')
 export const TRANSCODED_DIR = path.join(CACHE_DIR, 'transcoded')
 export const ART_DIR = path.join(CACHE_DIR, 'art')
+// where slskd writes partial Soulseek transfers before moving them to ORIGINAL_DIR
+export const INCOMPLETE_DIR = process.env.SLSKD_INCOMPLETE_DIR || path.join(CACHE_DIR, 'incomplete')
 export const DB_PATH = path.join(DATA_DIR, 'notify.db')
 
 export const config = {

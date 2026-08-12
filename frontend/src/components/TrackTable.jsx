@@ -1,7 +1,7 @@
 import React from 'react'
 import { usePlayer } from '../player'
 import { api } from '../api'
-import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, RadioIcon, ClockIcon, DownloadIcon, CloseIcon } from '../icons'
+import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, ClockIcon, DownloadIcon, CloseIcon } from '../icons'
 
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00'
@@ -20,7 +20,7 @@ function ItemLink({ text, to }) {
   )
 }
 
-export default function TrackTable({ tracks, showAlbum = true, showArtist = true, onRadio, context = 'track', removable, onRemove }) {
+export default function TrackTable({ tracks, showAlbum = true, showArtist = true, context = 'track', removable, onRemove }) {
   const { playQueue, current, toggle } = usePlayer()
   const [toast, setToast] = React.useState(null)
 
@@ -36,13 +36,6 @@ export default function TrackTable({ tracks, showAlbum = true, showArtist = true
     track.liked = res.liked
     setToast(res.liked ? 'Added to Liked Songs' : 'Removed from Liked Songs')
     setTimeout(() => setToast(null), 1800)
-  }
-
-  const radio = async (e, track) => {
-    e.stopPropagation()
-    if (onRadio) return onRadio(track)
-    const { tracks: station } = await api(`/radio/seed?type=track&id=${track.id}&limit=50`)
-    if (station.length) playQueue(station, 0, { radioSeed: { type: 'track', id: track.id } })
   }
 
   return (
@@ -101,9 +94,6 @@ export default function TrackTable({ tracks, showAlbum = true, showArtist = true
                     onClick={(e) => like(e, track)}
                   >
                     {track.liked ? <HeartFilledIcon size={16} /> : <HeartIcon size={16} />}
-                  </button>
-                  <button className="sp-icon-btn" title="Track radio" onClick={(e) => radio(e, track)}>
-                    <RadioIcon size={16} />
                   </button>
                   {removable && (
                     <button className="sp-icon-btn" title="Remove from playlist" onClick={(e) => { e.stopPropagation(); onRemove && onRemove(track.id) }}>

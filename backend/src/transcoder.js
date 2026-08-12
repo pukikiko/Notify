@@ -13,7 +13,7 @@ const pExec = (args) =>
 
 const inFlight = new Map()
 
-function encodeArgs(format) {
+export function encodeArgs(format) {
   switch (format) {
     case 'mp3-320': return { codec: 'libmp3lame', args: ['-c:a', 'libmp3lame', '-b:a', '320k', '-joint_stereo', '1'] }
     case 'mp3-192': return { codec: 'libmp3lame', args: ['-c:a', 'libmp3lame', '-b:a', '192k', '-joint_stereo', '1'] }

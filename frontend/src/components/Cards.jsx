@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Artwork from './Artwork'
 import { usePlayer } from '../player'
 import { api } from '../api'
-import { PlayIcon, RadioIcon } from '../icons'
+import { PlayIcon } from '../icons'
 
 export function Card({ art, name, meta, onClick, onPlay, playing, rounded, playBtn }) {
   return (
@@ -22,9 +22,9 @@ export function Card({ art, name, meta, onClick, onPlay, playing, rounded, playB
 export function ArtistCard({ artist }) {
   const { playQueue, current } = usePlayer()
 
-  const radio = async () => {
-    const { tracks } = await api(`/radio/seed?type=artist&id=${artist.id}&limit=50`)
-    if (tracks.length) playQueue(tracks, 0, { radioSeed: { type: 'artist', id: artist.id } })
+  const play = async () => {
+    const { tracks } = await api(`/library/artists/${artist.id}`)
+    if (tracks.length) playQueue(tracks, 0)
   }
 
   const playing = current?.artist?.id === artist.id
@@ -37,8 +37,8 @@ export function ArtistCard({ artist }) {
       rounded
       playing={playing}
       onClick={() => { window.location.hash = `/artist/${artist.id}` }}
-      onPlay={radio}
-      playBtn={<RadioIcon />}
+      onPlay={play}
+      playBtn={<PlayIcon />}
     />
   )
 }

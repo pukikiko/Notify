@@ -3,7 +3,7 @@ import { api } from '../api'
 import { usePlayer } from '../player'
 import TrackList from '../components/TrackList'
 import Artwork from '../components/Artwork'
-import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, DotsIcon, RadioIcon } from '../icons'
+import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, DotsIcon } from '../icons'
 
 function hashHue(str) {
   let h = 0
@@ -46,16 +46,6 @@ export default function AlbumView({ id, navigate }) {
   const playAll = () => {
     if (isPlayingAlbum) toggle()
     else playQueue(tracks, 0)
-  }
-
-  const radio = async () => {
-    if (isDiscover) {
-      setToast('Album radio works once the tracks are in your library')
-      setTimeout(() => setToast(null), 2500)
-      return
-    }
-    const { tracks: station } = await api(`/radio/seed?type=album&id=${album.id}&limit=50`)
-    if (station.length) playQueue(station, 0, { radioSeed: { type: 'album', id: album.id } })
   }
 
   const like = async () => {
@@ -105,7 +95,6 @@ export default function AlbumView({ id, navigate }) {
         <button className={`sp-icon-btn ${liked ? 'heart-on' : ''}`} style={{ width: 40, height: 40 }} title="Save to your library" onClick={like}>
           {liked ? <HeartFilledIcon size={28} /> : <HeartIcon size={28} />}
         </button>
-        <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="Album radio" onClick={radio}><RadioIcon size={24} /></button>
         <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="More"><DotsIcon size={24} /></button>
       </div>
 

@@ -30,7 +30,7 @@ export default function LibraryView({ navigate }) {
     <div className="page">
       <div className="page-hero-bg" style={{ background: 'linear-gradient(180deg, rgba(70,90,200,0.45) 0%, rgba(18,18,18,0) 100%)', height: 300 }} />
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <div className="hero" style={{ padding: '40px 0 20px' }}>
+        <div className="hero" style={{ padding: '40px 8px 20px' }}>
           <div className="hero-art" style={{ background: 'linear-gradient(135deg, #450af5, #c4efd9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <HeartFilledIcon size={72} />
           </div>

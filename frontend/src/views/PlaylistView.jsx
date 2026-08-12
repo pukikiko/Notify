@@ -3,7 +3,7 @@ import { api } from '../api'
 import { usePlayer } from '../player'
 import TrackTable from '../components/TrackTable'
 import Artwork from '../components/Artwork'
-import { PlayIcon, PauseIcon, PlusIcon, DotsIcon, RadioIcon } from '../icons'
+import { PlayIcon, PauseIcon, PlusIcon, DotsIcon } from '../icons'
 
 function hashHue(str) {
   let h = 0
@@ -34,11 +34,6 @@ export default function PlaylistView({ id, navigate }) {
   const playAll = () => {
     if (current && tracks.some((t) => t.id === current.id)) toggle()
     else playQueue(tracks, 0)
-  }
-
-  const radio = async () => {
-    const { tracks: station } = await api(`/radio/seed?type=playlist&id=${playlist.id}&limit=60`)
-    if (station.length) playQueue(station, 0, { radioSeed: { type: 'playlist', id: playlist.id } })
   }
 
   const searchLib = async (val) => {
@@ -102,7 +97,6 @@ export default function PlaylistView({ id, navigate }) {
         <button className="sp-btn--primary sp-btn" onClick={playAll} title={isPlaying && playing ? 'Pause' : 'Play'}>
           {isPlaying && playing ? <PauseIcon /> : <PlayIcon />}
         </button>
-        <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="Playlist radio" onClick={radio}><RadioIcon size={24} /></button>
         <button className="sp-btn sp-btn--ghost" onClick={() => setShowAdd(!showAdd)}><PlusIcon size={16} /> Add tracks</button>
         <button className="sp-btn sp-btn--outline" onClick={del}>Delete</button>
         <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="More"><DotsIcon size={24} /></button>
@@ -137,7 +131,7 @@ export default function PlaylistView({ id, navigate }) {
         <div className="empty" style={{ padding: '40px 32px' }}>Empty playlist. Add some tracks.</div>
       ) : (
         <div style={{ padding: '0 32px' }}>
-          <TrackTable tracks={tracks} onRadio={radio} onRemove={remove} removable />
+          <TrackTable tracks={tracks} onRemove={remove} removable />
         </div>
       )}
 

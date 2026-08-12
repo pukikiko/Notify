@@ -47,6 +47,10 @@ export default function PlayerBar() {
   const resolved = !!current && typeof current.id === 'number'
   const albumHref = current?.album?.id ? `#/album/${current.album.id}` : null
   const artistHref = current?.artist?.id ? `#/artist/${current.artist.id}` : null
+  // A real-time stream while the track downloads has no known total length
+  // yet, so the seek bar is hidden until the browser learns the duration.
+  const live = !Number.isFinite(duration) || duration === Infinity
+  const dur = Number.isFinite(duration) ? duration : 0
 
   const toggleLike = async () => {
     if (!current || typeof current.id !== 'number') return
@@ -55,6 +59,7 @@ export default function PlayerBar() {
   }
 
   const repeatNext = () => setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')
+  const toggleShuffle = () => setShuffle((enabled) => !enabled)
 
   return (
     <>
@@ -70,7 +75,7 @@ export default function PlayerBar() {
               <>
                 <a className="np-title" href={albumHref || artistHref || '#'} onClick={(e) => { if (!albumHref && !artistHref) e.preventDefault() }} title={current.title}>{current.title}</a>
                 {artistHref ? <a className="np-artist" href={artistHref}>{current.artist?.name}</a> : <div className="np-artist">{current.artist?.name || ''}</div>}
-                {preparing && <div className="np-pending"><DownloadIcon size={12} style={{ verticalAlign: '-2px' }} /> Downloading…</div>}
+                {(preparing || current.status === 'downloading') && <div className="np-pending"><DownloadIcon size={12} style={{ verticalAlign: '-2px' }} /> Downloading…</div>}
               </>
             ) : (
               <div className="np-artist">Nothing playing</div>
@@ -87,20 +92,22 @@ export default function PlayerBar() {
 
         <div className="np-center">
           <div className="player-controls">
-            <button className={`ctrl ${shuffle ? 'active' : ''}`} title="Enable shuffle" onClick={() => setShuffle(!shuffle)}><ShuffleIcon /></button>
+             <button className={`ctrl ${shuffle ? 'active' : ''}`} title={shuffle ? 'Disable shuffle' : 'Enable shuffle'} aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'} aria-pressed={shuffle} onClick={toggleShuffle}><ShuffleIcon /></button>
             <button className="ctrl" title="Previous" onClick={() => advance(-1)}><PrevIcon /></button>
             <button className="ctrl ctrl--play" title={playing ? 'Pause' : 'Play'} onClick={toggle}>
               {preparing ? <span className="spinner-mini" /> : (playing ? <PauseIcon /> : <PlayIcon />)}
             </button>
             <button className="ctrl" title="Next" onClick={() => advance(1)}><NextIcon /></button>
-            <button className={`ctrl ${repeat !== 'off' ? 'active' : ''}`} title={`Repeat: ${repeat}`} onClick={repeatNext}>
+             <button className={`ctrl ${repeat !== 'off' ? 'active' : ''}`} title={`Repeat: ${repeat}`} aria-label={`Repeat: ${repeat}`} aria-pressed={repeat !== 'off'} onClick={repeatNext}>
               {repeat === 'one' ? <RepeatOneIcon /> : <RepeatIcon />}
             </button>
           </div>
           <div className="progress">
             <span>{fmtTime(position)}</span>
-            <Slider value={position} max={duration} onChange={(v) => seek(v)} />
-            <span>{fmtTime(duration)}</span>
+            {live
+              ? <span className="np-live">Streaming…</span>
+              : <Slider value={position} max={dur} onChange={(v) => seek(v)} />}
+            <span>{live ? '–:––' : fmtTime(duration)}</span>
           </div>
         </div>
 

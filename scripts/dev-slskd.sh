@@ -5,6 +5,13 @@ set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Load .env so SLSKD_USERNAME/PASSWORD/API_KEY and Spotify creds are available.
+if [ -f .env ]; then
+  set -a
+  . ./.env
+  set +a
+fi
+
 # Resolve the slskd binary for the current platform/arch (same naming scheme
 # as scripts/setup-slskd.mjs: slskd-<osx|linux>-<arm64|x64>/slskd).
 case "$(uname -s)" in
@@ -47,6 +54,6 @@ if lsof -iTCP:4000 -sTCP:LISTEN >/dev/null 2>&1; then
 fi
 
 export SOULSEEK_MODE=slskd
-export SLSKD_API_KEY="$(cat bin/api-key.txt 2>/dev/null || true)"
+export SLSKD_API_KEY="${SLSKD_API_KEY:-$(cat bin/api-key.txt 2>/dev/null || true)}"
 echo "Starting backend on http://localhost:4000 …"
 node backend/src/index.js

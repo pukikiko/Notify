@@ -104,23 +104,24 @@ const PROVIDERS = {
 }
 
 /**
- * Search a single web provider for the best match of a track. Resolves to
- * { provider, url, title, artist, duration, thumbnail } or null when nothing
- * looks right. `query` overrides the auto-built "<artist> <title>" query for
- * free-text fallback searches; `minScore` lowers/raises the match bar.
+ * Search a single web provider for matches of a track. Resolves to an array
+ * of { provider, url, title, artist, duration, thumbnail } ranked by how well
+ * each candidate matches, limited to `limit` results at or above `minScore`.
+ * `query` overrides the auto-built "<artist> <title>" query for free-text
+ * fallback searches; `minScore` lowers/raises the match bar.
  */
-export async function searchTrack({ artist, album, title, duration, query, minScore = 25 }, providerName) {
+export async function searchTracks({ artist, album, title, duration, query, minScore = 25 }, providerName, limit = 1) {
   const cfg = PROVIDERS[providerName]
-  if (!cfg || !cfg.enabled()) return null
-  const q = (query && query.trim()) ? query.trim() : [artist, title].filter(Boolean).join(' ')
-  if (!q.trim()) return null
+  if (!cfg || !cfg.enabled()) return []
+  const q = (query && query.trim()) ? query.trim() : [artist, album, title].filter(Boolean).join(' ')
+  if (!q.trim()) return []
   const prefix = `${cfg.prefix()}${cfg.maxResults()}:`
   const raw = await pExec(['-J', '--no-playlist', '--flat-playlist', prefix + q], { timeout: cfg.timeoutMs() })
   let entries = []
   try {
     entries = JSON.parse(raw).entries || []
   } catch {
-    return null
+    return []
   }
   const candidates = entries
     .filter((e) => e && e.id && e.url && (e.title || e.duration) && e.ie_key !== 'YoutubeTab')
@@ -134,19 +135,26 @@ export async function searchTrack({ artist, album, title, duration, query, minSc
       description: e.description || '',
       thumbnail: pickThumbnail(e)
     }))
-  if (!candidates.length) return null
+  if (!candidates.length) return []
 
   candidates.sort((a, b) => scoreEntry(b, { artist, title, duration }) - scoreEntry(a, { artist, title, duration }))
-  const best = candidates[0]
-  if (scoreEntry(best, { artist, title, duration }) < minScore) return null
-  return {
-    provider: providerName,
-    url: best.url,
-    title: best.title,
-    artist: best.artist,
-    duration: best.duration,
-    thumbnail: best.thumbnail
-  }
+  return candidates
+    .filter((c) => scoreEntry(c, { artist, title, duration }) >= minScore)
+    .slice(0, limit)
+    .map((best) => ({
+      provider: providerName,
+      url: best.url,
+      title: best.title,
+      artist: best.artist,
+      duration: best.duration,
+      thumbnail: best.thumbnail
+    }))
+}
+
+/** Best single match for a track, or null when nothing clears the bar. */
+export async function searchTrack(opts, providerName) {
+  const [best] = await searchTracks(opts, providerName, 1)
+  return best || null
 }
 
 export function searchYtMusic(opts) {
@@ -155,6 +163,14 @@ export function searchYtMusic(opts) {
 
 export function searchSoundCloud(opts) {
   return searchTrack(opts, 'soundcloud')
+}
+
+export function searchYtMusicTracks(opts, limit = 8) {
+  return searchTracks(opts, 'youtubemusic', limit)
+}
+
+export function searchSoundCloudTracks(opts, limit = 8) {
+  return searchTracks(opts, 'soundcloud', limit)
 }
 
 /* ------------------------------------------------------------------ */
@@ -168,7 +184,10 @@ export function searchSoundCloud(opts) {
 export async function downloadWeb(url, outputBase, { timeoutMs } = {}) {
   if (!url) throw new Error('no url to download')
   const args = [
-    '-f', 'bestaudio[ext=m4a]/bestaudio/best',
+    // Prefer streamable containers (webm/ogg) so the partial file can be fed
+    // to the transcoder in real time while yt-dlp is still downloading; m4a
+    // keeps its trailing moov atom and only decodes once the file completes.
+    '-f', 'bestaudio[ext=webm]/bestaudio[ext=ogg]/bestaudio[ext=m4a]/bestaudio/best',
     '--no-playlist',
     '--no-progress',
     '-o', `${outputBase}.%(ext)s`,

@@ -57,7 +57,11 @@ npm start    # builds frontend, serves everything on http://localhost:4000
 
 The repo ships a `Dockerfile` and `docker-compose.yml` that run the whole app —
 backend, built frontend, and a bundled [slskd](https://github.com/slskd/slskd)
-daemon (so the real Soulseek network works out of the box).
+daemon (so the real Soulseek network works out of the box). The image bundles
+`ffmpeg` and a self-contained `yt-dlp` binary (the `yt-dlp_linux` build, which
+needs no Python), so the YouTube Music / SoundCloud failover works out of the
+box. `data/`, `node_modules/` and other local artifacts are excluded from the
+build context via `.dockerignore`.
 
 ```bash
 # first run: create the cache directories slskd requires (it refuses to start without them)
@@ -82,6 +86,7 @@ Configuration comes from your environment (or a `.env` file next to
 | `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | — | Spotify metadata + artwork |
 | `PORT` | `4000` | host port mapped to the backend |
 | `YOUTUBE_ENABLED` / `SOUNDCLOUD_ENABLED` | `true` | yt-dlp web failover sources |
+| `YTDLP_PATH` | `yt-dlp` | path to the yt-dlp binary (in Docker it's on `PATH` at `/usr/local/bin/yt-dlp`) |
 
 Set the Soulseek credentials and an API key, then:
 
@@ -174,6 +179,11 @@ Install yt-dlp (macOS: `brew install yt-dlp`, Debian/Ubuntu: `sudo apt install y
 Windows: `winget install yt-dlp.yt-dlp`) and make sure `ffmpeg` is available for
 transcoding. No configuration is required — it's enabled by default and only used as a
 fallback. Disable each source with `YOUTUBE_ENABLED=false` / `SOUNDCLOUD_ENABLED=false`.
+
+> Note: when running locally, install the **standalone `yt-dlp`** or the self-contained
+> `yt-dlp_linux` binary — the plain `yt-dlp` download from the GitHub releases page is a
+> Python zipapp and will not run unless `python3` is on the system. The Docker image uses
+> the `yt-dlp_linux` binary precisely so it works without Python inside the container.
 
 ## Requirements
 

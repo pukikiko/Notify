@@ -36,14 +36,14 @@ export default function SettingsView() {
       <div className="settings-block">
         <h2>Streaming format</h2>
         <p className="desc">Your preferred codec. The first time you play a track it's transcoded once into this format and cached — every user who chooses the same format shares the same cached file.</p>
-        <label className="field">
+        <div className="field">
           <label>Preferred format</label>
           <select className="sp-select" value={format} onChange={(e) => setFormat(e.target.value)}>
             {status && Object.entries(status.formats || {}).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
-        </label>
+        </div>
         <button className="sp-btn sp-btn--primary" onClick={save}>{saved ? '✓ Saved' : 'Save'}</button>
       </div>
 

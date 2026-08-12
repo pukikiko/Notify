@@ -8,7 +8,6 @@ import authRoutes from './routes/auth.js'
 import searchRoutes from './routes/search.js'
 import libraryRoutes from './routes/library.js'
 import playlistRoutes from './routes/playlists.js'
-import radioRoutes from './routes/radio.js'
 import streamRoutes from './routes/stream.js'
 import statusRoutes from './routes/status.js'
 
@@ -27,7 +26,6 @@ app.use('/api', streamRoutes)
 app.use('/api', searchRoutes)
 app.use('/api/library', libraryRoutes)
 app.use('/api/playlists', playlistRoutes)
-app.use('/api/radio', radioRoutes)
 app.use('/api/status', statusRoutes)
 
 // serve built frontend when present

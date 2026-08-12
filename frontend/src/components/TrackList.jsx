@@ -1,7 +1,7 @@
 import React from 'react'
 import { usePlayer } from '../player'
 import { api } from '../api'
-import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, RadioIcon, ClockIcon, DownloadIcon } from '../icons'
+import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, ClockIcon, DownloadIcon } from '../icons'
 
 function fmtTime(s) {
   if (!s || isNaN(s)) return '0:00'
@@ -25,7 +25,7 @@ function ItemLink({ text, to }) {
     instantly, rows that are downloading auto-play once the server finishes, and
     rows that are only discoverable are resolved + downloaded on demand by the
     player (with the next track prefetched in the background). */
-export default function TrackList({ tracks, showAlbum = true, showArtist = true, onRadio, current }) {
+export default function TrackList({ tracks, showAlbum = true, showArtist = true, current }) {
   const { playQueue, toggle } = usePlayer()
   const [toast, setToast] = React.useState(null)
 
@@ -46,13 +46,6 @@ export default function TrackList({ tracks, showAlbum = true, showArtist = true,
     track.liked = res.liked
     setToast(res.liked ? 'Added to Liked Songs' : 'Removed from Liked Songs')
     setTimeout(() => setToast(null), 1800)
-  }
-
-  const radio = async (e, track) => {
-    e.stopPropagation()
-    if (onRadio) return onRadio(track)
-    const { tracks: station } = await api(`/radio/seed?type=track&id=${track.id}&limit=50`)
-    if (station.length) playQueue(station, 0, { radioSeed: { type: 'track', id: track.id } })
   }
 
   if (!tracks || !tracks.length) return null
@@ -124,9 +117,6 @@ export default function TrackList({ tracks, showAlbum = true, showArtist = true,
                         onClick={(e) => like(e, track)}
                       >
                         {track.liked ? <HeartFilledIcon size={16} /> : <HeartIcon size={16} />}
-                      </button>
-                      <button className="sp-icon-btn" title="Track radio" onClick={(e) => radio(e, track)}>
-                        <RadioIcon size={16} />
                       </button>
                     </>
                   )}

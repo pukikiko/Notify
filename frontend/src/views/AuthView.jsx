@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
-import { NotifyLogo } from '../icons'
 
 export default function AuthView() {
   const { login, register } = useApp()
@@ -24,42 +23,72 @@ export default function AuthView() {
     }
   }
 
+  const switchMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login')
+    setError('')
+  }
+
   return (
-    <div className="app" style={{ justifyContent: 'center' }}>
-      <div style={{ textAlign: 'center', padding: '0 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <NotifyLogo size={52} />
-        </div>
+    <div className="auth-page">
+      <header className="auth-header">
+        <a href="#/" className="auth-brand" onClick={(e) => e.preventDefault()}>
+          <span>Notify</span>
+        </a>
+      </header>
 
-        <form className="form-card" onSubmit={submit} style={{ maxWidth: 432, background: '#121212', borderRadius: 8, padding: '0 32px 32px' }}>
+      <main className="auth-main">
+        <form className="auth-card" onSubmit={submit} noValidate>
           <h1>{mode === 'login' ? 'Log in to Notify' : 'Sign up for Notify'}</h1>
-          <p className="form-sub">Your private music. Pulled from Soulseek, cached and streamed for your accounts.</p>
 
-          <div className="divider-line" />
-          <div className="divider-line" style={{ margin: '0 0 24px' }} />
-
-          <label className="field">
-            <label htmlFor="username">Username</label>
-            <input id="username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoFocus />
+          <label className="auth-field">
+            <span>Username</span>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoFocus
+            />
           </label>
-          <label className="field">
-            <label htmlFor="password">Password</label>
-            <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
-          </label>
-          {error && <div className="error">{error}</div>}
 
-          <button className="sp-btn sp-btn--primary" style={{ width: '100%', justifyContent: 'center', padding: '14px 32px' }} disabled={busy}>
-            {busy ? '…' : mode === 'login' ? 'Log In' : 'Sign Up'}
+          <label className="auth-field">
+            <span>Password</span>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            />
+          </label>
+
+          {error && (
+            <p className="auth-error" role="alert">
+              {error}
+            </p>
+          )}
+
+          <button type="submit" className="auth-submit" disabled={busy}>
+            {busy ? (mode === 'login' ? 'Logging in…' : 'Signing up…') : mode === 'login' ? 'Log In' : 'Sign Up'}
+          </button>
+
+          <div className="auth-or"><span>or</span></div>
+
+          <p className="auth-alt">{mode === 'login' ? "Don't have an account?" : 'Already have an account?'}</p>
+          <button type="button" className="auth-switch-btn" onClick={switchMode}>
+            {mode === 'login' ? 'Sign up for Notify' : 'Log in'}
           </button>
         </form>
+      </main>
 
-        <div className="auth-switch" style={{ maxWidth: 432, margin: '0 auto' }}>
-          <span>{mode === 'login' ? "Don't have an account?" : 'Already have an account?'}</span>{' '}
-          <a href="#" onClick={(e) => { e.preventDefault(); setMode(mode === 'login' ? 'register' : 'login') }}>
-            {mode === 'login' ? 'Sign up for Notify' : 'Log in'}
-          </a>
-        </div>
-      </div>
+      <footer className="auth-footer">
+        Your private music. Pulled from Soulseek, cached and streamed for your accounts.
+      </footer>
     </div>
   )
 }

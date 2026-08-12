@@ -166,6 +166,11 @@ class SlskdSoulseek {
     if (config.slskd.username && config.slskd.password) {
       this._authHeaders['Authorization'] = 'Basic ' + Buffer.from(`${config.slskd.username}:${config.slskd.password}`).toString('base64')
     }
+    // Search dedup: a running search for the same query is shared (so parallel
+    // track plays don't fire N identical slskd searches), and a recent result
+    // is reused so repeated queries stop re-hitting the network.
+    this._searchCache = new Map()
+    this._searchCacheTtlMs = 15000
   }
 
   async _request(method, pathname, body) {
@@ -215,6 +220,33 @@ class SlskdSoulseek {
   }
 
   async search(query, limit = 50) {
+    const key = `q:${query}:${limit}`
+    const cached = this._searchCache.get(key)
+    if (cached) {
+      // A search for this query is already running — share it instead of
+      // posting a second (identical) slskd search.
+      if (cached.promise) return cached.promise
+      // A recent result for this query — reuse it.
+      if (Date.now() - cached.at < this._searchCacheTtlMs) return cached.value
+    }
+    const promise = this._doSearch(query, limit)
+      .then((value) => {
+        this._searchCache.set(key, { promise: null, value, at: Date.now() })
+        if (this._searchCache.size > 200) {
+          const first = this._searchCache.keys().next().value
+          this._searchCache.delete(first)
+        }
+        return value
+      })
+      .catch((err) => {
+        this._searchCache.delete(key)
+        throw err
+      })
+    this._searchCache.set(key, { promise, value: null, at: Date.now() })
+    return promise
+  }
+
+  async _doSearch(query, limit = 50) {
     const { id } = await this._request('POST', '/api/v0/searches', {
       searchText: query,
       searchTimeout: config.soularr.searchTimeoutMs,

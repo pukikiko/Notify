@@ -14,7 +14,6 @@ import PlaylistsView from './views/PlaylistsView'
 import PlaylistView from './views/PlaylistView'
 import SpotifyPlaylistView from './views/SpotifyPlaylistView'
 import SpotifyProfileView from './views/SpotifyProfileView'
-import RadioView from './views/RadioView'
 import SettingsView from './views/SettingsView'
 
 function parseRoute() {
@@ -46,7 +45,6 @@ function Router() {
     switch (view) {
       case '/': return <HomeView navigate={navigate} />
       case '/search': return <SearchView navigate={navigate} />
-      case '/radio': return <RadioView navigate={navigate} />
       case '/library': return <LibraryView navigate={navigate} />
       case '/playlists': return <PlaylistsView navigate={navigate} />
       case '/playlist':

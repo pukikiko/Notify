@@ -31,6 +31,75 @@ function fmtTime(s) {
   return `${m}:${sec}`
 }
 
+function Sk({ w, h, br, style }) {
+  return <div className="sk" style={{ width: w, height: h, borderRadius: br || 4, ...style }} />
+}
+
+function SearchSkeleton() {
+  return (
+    <div className="search-skeleton">
+      <div className="skeleton-top">
+        <div className="sk-card sk-topcard">
+          <Sk w={92} h={92} br={6} />
+          <div className="sk-lines">
+            <Sk w={64} h={12} />
+            <Sk w={220} h={26} />
+            <Sk w={140} h={12} />
+          </div>
+        </div>
+        <div className="sk-popular">
+          <Sk w={120} h={20} />
+          {[0, 1, 2, 3].map((i) => (
+            <div className="sk-row" key={i}>
+              <Sk w={40} h={40} br={6} />
+              <div className="sk-lines grow">
+                <Sk w="80%" h={12} />
+                <Sk w="55%" h={12} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Sk w={140} h={20} className="skeleton-section-title" />
+      <div className="skeleton-grid">
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div className="sk-card" key={i}>
+            <div className="sk" style={{ width: '100%', aspectRatio: '1', borderRadius: 6 }} />
+            <Sk w="70%" h={14} />
+            <Sk w="48%" h={12} />
+          </div>
+        ))}
+      </div>
+
+      <Sk w={140} h={20} className="skeleton-section-title" />
+      <div className="skeleton-grid">
+        {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+          <div className="sk-card" key={i}>
+            <div className="sk" style={{ width: '100%', aspectRatio: '1', borderRadius: 6 }} />
+            <Sk w="70%" h={14} />
+            <Sk w="48%" h={12} />
+          </div>
+        ))}
+      </div>
+
+      <Sk w={140} h={20} className="skeleton-section-title" />
+      <div className="skeleton-songs">
+        {[0, 1, 2, 3].map((i) => (
+          <div className="sk-row" key={i}>
+            <Sk w={40} h={40} br={6} />
+            <div className="sk-lines grow">
+              <Sk w="35%" h={13} />
+              <Sk w="22%" h={12} />
+            </div>
+            <Sk w={44} h={12} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function SearchView({ navigate }) {
   const { playQueue, current } = usePlayer()
   const [q, setQ] = useState('')
@@ -154,9 +223,10 @@ export default function SearchView({ navigate }) {
 
   const noResults = q.trim() && !searching && disc && !artists.length && !albums.length && !playlists.length && !tracks.length && !libTracks.length
 
+  const hasResults = Boolean((disc || lib) && (artists.length || albums.length || playlists.length || tracks.length || libTracks.length))
+
   return (
     <div className="search-page">
-      <div className="page-hero-bg" style={{ background: 'linear-gradient(180deg, rgba(56,46,36,0.5) 0%, rgba(18,18,18,0) 100%)', height: 260 }} />
       <div style={{ position: 'relative', zIndex: 1 }}>
         {!q.trim() && (
           <>
@@ -174,7 +244,7 @@ export default function SearchView({ navigate }) {
           </>
         )}
 
-        {q.trim() && searching && !disc && !lib && <div className="spinner" />}
+        {q.trim() && searching && !hasResults && <SearchSkeleton />}
         {busy && <div className="spinner" />}
         {error && <div className="error" style={{ textAlign: 'center', padding: 40 }}>{error}</div>}
 
@@ -182,7 +252,7 @@ export default function SearchView({ navigate }) {
           <div className="empty">No results found for “{q}” on Spotify, YouTube Music or SoundCloud. Try a different spelling.</div>
         )}
 
-        {q.trim() && (disc || lib) && (artists.length || albums.length || playlists.length || tracks.length || libTracks.length) && (
+        {hasResults && (
           <>
             {topResult && (
               <div className="top-result-layout">
@@ -211,7 +281,7 @@ export default function SearchView({ navigate }) {
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {tracks.slice(0, 4).map((t) => (
                         <div key={t.id || t.mbid} className="sp-tracklist" style={{ border: 0 }}>
-                          <div className="tr-title-cell" style={{ padding: '8px 0', cursor: 'pointer' }} onClick={() => playTrack(t)}>
+                          <div className="tr-title-cell" style={{ padding: '8px 48px 8px 0', cursor: 'pointer' }} onClick={() => playTrack(t)}>
                             <span className="track-art" style={{ width: 40, height: 40 }}>
                               {t.image ? <img src={t.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                             </span>

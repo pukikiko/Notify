@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useApp } from '../store'
 import { api } from '../api'
 import {
-  NotifyLogo, HomeIcon, SearchIcon, LibraryIcon, PlusIcon, HeartFilledIcon, LogoutIcon
+  HomeIcon, SearchIcon, LibraryIcon, PlusIcon, HeartFilledIcon, LogoutIcon
 } from '../icons'
 
 function LibraryItem({ art, name, type, active, onClick }) {
@@ -24,7 +24,7 @@ export default function Sidebar({ view, navigate }) {
 
   useEffect(() => {
     api('/playlists').then((r) => setPlaylists(r.playlists)).catch(() => {})
-  }, [])
+  }, [view])
 
   const open = useCallback((to) => {
     navigate(to)
@@ -43,7 +43,7 @@ export default function Sidebar({ view, navigate }) {
     <div className="sidebar">
       <div className="sidebar-top">
         <div className="logo" onClick={() => open('/')} style={{ cursor: 'pointer' }}>
-          <NotifyLogo /><span>Notify</span>
+          <span>Notify</span>
         </div>
         <button className={`sidebar-nav-item ${view === '/' ? 'active' : ''}`} onClick={() => open('/')}>
           <span className="icon"><HomeIcon /></span> Home

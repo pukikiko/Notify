@@ -4,7 +4,7 @@ import { usePlayer } from '../player'
 import TrackList from '../components/TrackList'
 import { Card, AlbumCard } from '../components/Cards'
 import Artwork from '../components/Artwork'
-import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, DotsIcon, RadioIcon } from '../icons'
+import { PlayIcon, PauseIcon, HeartIcon, HeartFilledIcon, DotsIcon } from '../icons'
 
 function hashHue(str) {
   let h = 0
@@ -37,11 +37,12 @@ export default function ArtistView({ id, navigate }) {
   if (!data) return <div className="page"><div className="spinner" /></div>
   if (data.error) return <div className="page"><div className="empty">Artist not found</div></div>
 
-  const artist = isDiscover ? data.artist : data.artist
+  const artist = data.artist
   const tracks = data.popularTracks || data.tracks || []
   const albums = data.albums || []
 
   const hue = hashHue(artist.name)
+  const heroBg = artist.wikiImage
 
   const isCurrentTrack = (t) => current && (current.id === t.id || (t.mbid && current.mbid && t.mbid === current.mbid))
   const isPlayingArtist = tracks.some(isCurrentTrack)
@@ -75,16 +76,6 @@ export default function ArtistView({ id, navigate }) {
     }
   }
 
-  const radio = async () => {
-    if (isDiscover) {
-      setToast('Artist radio works once some tracks are in your library')
-      setTimeout(() => setToast(null), 2500)
-      return
-    }
-    const { tracks: station } = await api(`/radio/seed?type=artist&id=${artist.id}&limit=50`)
-    if (station.length) playQueue(station, 0, { radioSeed: { type: 'artist', id: artist.id } })
-  }
-
   const like = async () => {
     if (isDiscover) {
       setToast('Save it by playing something first')
@@ -99,7 +90,19 @@ export default function ArtistView({ id, navigate }) {
 
   return (
     <div className="page page-with-hero">
-      <div className="page-hero-bg" style={{ background: `linear-gradient(180deg, hsl(${hue} 45% 18%) 0%, hsl(${hue} 30% 12%) 45%, var(--sp-bg-base) 100%)`, height: 380 }} />
+      <div
+        className="page-hero-bg"
+        style={
+          heroBg
+            ? {
+                backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.1) 40%, hsl(${hue} 30% 10%) 100%), url(${heroBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center 25%',
+                height: 380
+              }
+            : { background: `linear-gradient(180deg, hsl(${hue} 45% 18%) 0%, hsl(${hue} 30% 12%) 45%, var(--sp-bg-base) 100%)`, height: 380 }
+        }
+      />
       <div className="hero">
         <Artwork src={artist.image} alt={artist.name} className="hero-art rounded" rounded />
         <div className="hero-info">
@@ -114,14 +117,13 @@ export default function ArtistView({ id, navigate }) {
         </div>
       </div>
 
-      <div className="action-row">
+      <div className="action-row action-row--hero">
         <button className="sp-btn--primary sp-btn" onClick={playAll} title={isPlayingArtist && playing ? 'Pause' : 'Play'}>
           {isPlayingArtist && playing ? <PauseIcon /> : <PlayIcon />}
         </button>
         <button className={`sp-icon-btn ${liked ? 'heart-on' : ''}`} style={{ width: 40, height: 40 }} title="Follow artist" onClick={like}>
           {liked ? <HeartFilledIcon size={28} /> : <HeartIcon size={28} />}
         </button>
-        <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="Artist radio" onClick={radio}><RadioIcon size={24} /></button>
         <button className="sp-icon-btn" style={{ width: 40, height: 40 }} title="More"><DotsIcon size={24} /></button>
       </div>
 
@@ -165,6 +167,13 @@ export default function ArtistView({ id, navigate }) {
               <button key={name} className="genre-tag" onClick={() => { window.location.hash = `/search?q=${encodeURIComponent(name)}` }}>{name}</button>
             ))}
           </div>
+        </div>
+      )}
+
+      {artist.bio && (
+        <div style={{ padding: '0 32px' }}>
+          <h2 className="section-title">About {artist.name}</h2>
+          <p className="about-text">{artist.bio}</p>
         </div>
       )}
 

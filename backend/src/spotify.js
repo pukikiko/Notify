@@ -149,19 +149,19 @@ async function search(q, type, limit) {
 }
 
 export function spSearchArtists(q) {
-  return search(q, 'artist', 6).then((d) => (d.artists?.items || []).map(artistEntity))
+  return search(q, 'artist', 12).then((d) => (d.artists?.items || []).filter(Boolean).map(artistEntity))
 }
 
 export function spSearchAlbums(q) {
-  return search(q, 'album', 15).then((d) => (d.albums?.items || []).map(albumEntity))
+  return search(q, 'album', 30).then((d) => (d.albums?.items || []).filter(Boolean).map(albumEntity))
 }
 
 export function spSearchTracks(q) {
-  return search(q, 'track', 20).then((d) => (d.tracks?.items || []).map(trackEntity))
+  return search(q, 'track', 30).then((d) => (d.tracks?.items || []).filter(Boolean).map(trackEntity))
 }
 
 export function spSearchPlaylists(q) {
-  return search(q, 'playlist', 12).then((d) => (d.playlists?.items || []).map(playlistEntity))
+  return search(q, 'playlist', 20).then((d) => (d.playlists?.items || []).filter(Boolean).map(playlistEntity))
 }
 
 export function userEntity(u) {

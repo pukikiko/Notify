@@ -1,0 +1,27 @@
+# Dependencies
+**/node_modules/
+
+# Build output
+frontend/dist/
+backend/dist/
+
+# Runtime data (DB, cache, downloads) — bind-mounted in compose
+data/
+
+# Downloaded binaries / config
+bin/
+
+# Environment / secrets
+.env
+.env.*
+
+# Git
+.git/
+
+# Logs
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

@@ -145,7 +145,7 @@ async function enrichInBackground(trackId, meta, artistRow, albumRow) {
       const arow = db.prepare('SELECT * FROM artists WHERE id = ?').get(artistRow.id)
       const merged = {
         mbid: enriched.artistMbid || arow.mbid,
-        genres: [...new Set([...(arow.genres || []), ...(enriched.artistGenres || [])])].slice(0, 12),
+        genres: [...new Set([...safeJson(arow.genres, []), ...(enriched.artistGenres || [])])].slice(0, 12),
         similar: [...new Set(enriched.similarArtists || [])].slice(0, 10)
       }
       db.prepare('UPDATE artists SET mbid = ?, genres = ?, similar = ? WHERE id = ?')

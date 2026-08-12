@@ -3,9 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { authMiddleware } from '../auth.js'
 import { db } from '../db.js'
-import { transcode, getTranscodedPath } from '../transcoder.js'
+import { transcode, getTranscodedPath, isAlreadyFormat } from '../transcoder.js'
 import { formatInfo, ART_DIR } from '../config.js'
 import { extractEmbeddedCover, saveTrackCover } from '../metadata.js'
+import { serveGrowing, serveLiveTranscode, sourceCandidates, trackDone } from '../progressive.js'
 
 const router = Router()
 
@@ -78,7 +79,15 @@ router.get('/art/:trackId', async (req, res) => {
 
 router.get('/stream/:trackId', authMiddleware, async (req, res) => {
   const track = db.prepare('SELECT * FROM tracks WHERE id = ?').get(req.params.trackId)
-  if (!track || track.status !== 'available') {
+  if (!track) {
+    return res.status(404).json({ error: 'Track not found' })
+  }
+  // Still downloading: stream it in real time as data arrives instead of
+  // making the client wait for the whole file.
+  if (track.status === 'downloading') {
+    return serveLiveTrack(req, res, track)
+  }
+  if (track.status !== 'available') {
     return res.status(404).json({ error: 'Track not available yet' })
   }
   if (!track.source_path || !fs.existsSync(track.source_path)) {
@@ -98,6 +107,42 @@ router.get('/stream/:trackId', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Streaming failed' })
   }
 })
+
+/** Stream a track whose download is still in progress. When the requested
+    format matches the source container (no transcode needed) the growing
+    source file is served directly; otherwise it is piped through ffmpeg and
+    the growing transcode output is served — in both cases playback begins as
+    soon as decodable audio exists, while the download continues. */
+function serveLiveTrack(req, res, track) {
+  const format = req.userSettings.preferredFormat || 'mp3-320'
+  const ext = liveSourceExt(track)
+  const direct = format === 'original' || (ext && isAlreadyFormat(`x.${ext}`, format))
+  if (direct) {
+    const download = db.prepare("SELECT * FROM downloads WHERE track_id = ? AND status != 'complete' ORDER BY id DESC LIMIT 1").get(track.id)
+    const knownTotal = download && download.provider === 'soulseek' && download.size > 0 ? download.size : null
+    return serveGrowing(req, res, {
+      candidates: () => sourceCandidates(track.id),
+      done: trackDone(track.id),
+      mime: ext ? mimeForFile(`x.${ext}`) : 'application/octet-stream',
+      knownTotal
+    })
+  }
+  serveLiveTranscode(req, res, { trackId: track.id, format })
+}
+
+/** Prefer the actual on-disk partial's extension over the enqueued metadata
+    (yt-dlp may pick a different container than was expected). */
+function liveSourceExt(track) {
+  for (const p of sourceCandidates(track.id)) {
+    const size = (() => { try { return fs.statSync(p).size } catch { return 0 } })()
+    if (size > 0) {
+      const ext = path.extname(p).replace('.', '').toLowerCase()
+      if (ext === 'part') continue // yt-dlp partial: not a real container ext
+      if (ext) return ext
+    }
+  }
+  return (track.source_format || '').toLowerCase() || null
+}
 
 function mimeForFile(p) {
   switch (path.extname(p).replace('.', '').toLowerCase()) {

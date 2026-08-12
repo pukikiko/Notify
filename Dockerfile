@@ -16,7 +16,7 @@ WORKDIR /app
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates ffmpeg curl \
   && rm -rf /var/lib/apt/lists/* \
-  && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+  && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp \
   && chmod +x /usr/local/bin/yt-dlp
 
 COPY backend/package.json backend/package-lock.json ./backend/

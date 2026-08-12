@@ -1,9 +1,9 @@
 import { DatabaseSync } from 'node:sqlite'
 import fs from 'node:fs'
 import path from 'node:path'
-import { DB_PATH, ORIGINAL_DIR, TRANSCODED_DIR, ART_DIR, CACHE_DIR } from './config.js'
+import { DB_PATH, ORIGINAL_DIR, TRANSCODED_DIR, ART_DIR, INCOMPLETE_DIR, CACHE_DIR } from './config.js'
 
-for (const dir of [CACHE_DIR, ORIGINAL_DIR, TRANSCODED_DIR, ART_DIR]) {
+for (const dir of [CACHE_DIR, ORIGINAL_DIR, INCOMPLETE_DIR, TRANSCODED_DIR, ART_DIR]) {
   fs.mkdirSync(dir, { recursive: true })
 }
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })

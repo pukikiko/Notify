@@ -1,7 +1,7 @@
 import { config } from './config.js'
 import { soulseek, isMockMode } from './soulseek.js'
 import { parseFilename, enqueueDownload, findExistingTrack, findInFlightTrack, findExistingAlbum } from './downloader.js'
-import { youtubeEnabled, soundcloudEnabled, webSourceEnabled, searchYtMusic, searchSoundCloud } from './web.js'
+import { youtubeEnabled, soundcloudEnabled, webSourceEnabled, searchYtMusic, searchSoundCloud, searchYtMusicTracks, searchSoundCloudTracks } from './web.js'
 import { db, getTrackRow } from './db.js'
 import {
   ratioVariants, verifyFiletype, albumTrackNum, albumMatch, buildQuery,
@@ -13,6 +13,7 @@ import {
   spArtistDetail, spArtistTopTracks, spArtistAlbums,
   spAlbumDetail, spAlbumTracks, spPlaylistDetail, spPlaylistTracks, spUserPlaylists
 } from './spotify.js'
+import { wikiArtist } from './wikipedia.js'
 
 function norm(s) {
   return (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '')
@@ -178,6 +179,13 @@ export function libraryArtistId({ name, mbid } = {}) {
   return null
 }
 
+/** Attach a Wikipedia bio + lead image to an artist object (cached). */
+export async function enrichArtist(artist) {
+  if (!artist || !artist.name || artist.bio) return artist
+  const wiki = await wikiArtist(artist.name)
+  return wiki ? { ...artist, bio: wiki.extract, wikiImage: wiki.image } : artist
+}
+
 export function libraryAlbumId({ title, artistName, mbid } = {}) {
   if (mbid) {
     const row = db.prepare('SELECT id FROM albums WHERE mbid = ?').get(mbid)
@@ -238,35 +246,38 @@ function estimatedDownloadSeconds({ size = 0, uploadSpeed = 0 }) {
 
 export async function findBestTrackSource({ artist, album, title }) {
   const query = buildQuery(artist, title)
+  // One search serves every quality tier: slskd already filters to complete
+  // files, and each file is then scored against the tier it best satisfies.
+  let results = []
+  try {
+    results = await soulseek.search(query, 100)
+  } catch {
+    return null
+  }
   const candidates = []
-  for (let tier = 0; tier < config.soularr.allowedFiletypes.length; tier++) {
-    const allowedFiletype = config.soularr.allowedFiletypes[tier]
-    const ext = allowedFiletype.split(' ')[0]
-    let results = []
-    try {
-      results = await soulseek.search(query, 100)
-    } catch {
-      continue
-    }
-    for (const user of results) {
-      if (isIgnoredUser(user.username)) continue
-      for (const file of user.files) {
-        if (!verifyFiletype(file, allowedFiletype)) continue
-        if (artistScore(file.filename, artist) < config.soularr.minimumArtistScore) continue
-        const ratio = ratioVariants(`${title}.${ext}`, file.filename, album, config.soularr.minimumMatchRatio)
-        if (ratio <= config.soularr.minimumMatchRatio) continue
-        candidates.push({
-          tier,
-          username: user.username,
-          filename: file.filename,
-          size: file.size,
-          length: file.length,
-          format: file.format,
-          bitrate: file.bitrate,
-          ratio,
-          time: estimatedDownloadSeconds({ size: file.size, uploadSpeed: user.uploadSpeed })
-        })
+  for (const user of results) {
+    if (isIgnoredUser(user.username)) continue
+    for (const file of user.files) {
+      let tier = -1
+      for (let t = 0; t < config.soularr.allowedFiletypes.length; t++) {
+        if (verifyFiletype(file, config.soularr.allowedFiletypes[t])) { tier = t; break }
       }
+      if (tier < 0) continue
+      if (artistScore(file.filename, artist) < config.soularr.minimumArtistScore) continue
+      const ext = config.soularr.allowedFiletypes[tier].split(' ')[0]
+      const ratio = ratioVariants(`${title}.${ext}`, file.filename, album, config.soularr.minimumMatchRatio)
+      if (ratio <= config.soularr.minimumMatchRatio) continue
+      candidates.push({
+        tier,
+        username: user.username,
+        filename: file.filename,
+        size: file.size,
+        length: file.length,
+        format: file.format,
+        bitrate: file.bitrate,
+        ratio,
+        time: estimatedDownloadSeconds({ size: file.size, uploadSpeed: user.uploadSpeed })
+      })
     }
   }
   if (!candidates.length) return null
@@ -302,14 +313,16 @@ export async function findAlbumSource({ artist, album, tracklist }) {
     ? tracklist.map((t) => ({ title: t.title }))
     : null
 
-  for (const allowedFiletype of config.soularr.allowedFiletypes) {
-    let results = []
-    try {
-      results = await soulseek.search(query, 100)
-    } catch {
-      continue
-    }
+  // Search once for the album and filter per quality tier below; re-searching
+  // for every tier would hit slskd with several identical queries.
+  let results = []
+  try {
+    results = await soulseek.search(query, 100)
+  } catch {
+    return null
+  }
 
+  for (const allowedFiletype of config.soularr.allowedFiletypes) {
     const groups = []
     for (const user of results) {
       if (isIgnoredUser(user.username)) continue
@@ -467,7 +480,7 @@ async function catalogSearch(q) {
       trackCount: a.files.length,
       source: { username: a.username, files: a.files }
     })),
-    tracks: tracks.slice(0, 10)
+    tracks: tracks.slice(0, 20)
   }
 }
 
@@ -494,41 +507,43 @@ function dedupeReleases(albums) {
 }
 
 /** Free-text search of the web fallback providers (YouTube Music, then
-    SoundCloud). Only reached when Spotify couldn't find the query. */
+    SoundCloud). Only reached when Spotify couldn't find the query. Returns
+    several ranked hits per provider so the search page shows a real list of
+    playable YouTube Music / SoundCloud results, not just a single best guess. */
 async function webTracksSearch(q) {
   const out = []
   const searches = []
-  if (youtubeEnabled()) searches.push(searchYtMusic)
-  if (soundcloudEnabled()) searches.push(searchSoundCloud)
-  for (const search of searches) {
-    const label = search === searchYtMusic ? 'youtube music' : 'soundcloud'
-    let hit = null
+  if (youtubeEnabled()) searches.push(['youtube music', searchYtMusicTracks])
+  if (soundcloudEnabled()) searches.push(['soundcloud', searchSoundCloudTracks])
+  for (const [label, search] of searches) {
+    let hits = []
     try {
-      hit = await search({ query: q, title: q, minScore: 12 })
+      hits = await search({ query: q, title: q, minScore: 12 }, 8)
     } catch (err) {
       console.warn(`[discover] ${label} search failed`, err.message)
       continue
     }
-    if (!hit) continue
-    out.push({
-      kind: 'track',
-      id: `web-track:${hit.provider}:${encodeURIComponent(hit.url)}`,
-      title: hit.title,
-      artist: { name: hit.artist },
-      album: null,
-      mbid: null,
-      duration: hit.duration,
-      image: hit.thumbnail,
-      provider: hit.provider,
-      source: {
-        provider: hit.provider,
-        username: hit.provider,
-        filename: q,
+    for (const hit of hits) {
+      out.push({
+        kind: 'track',
+        id: `web-track:${hit.provider}:${encodeURIComponent(hit.url)}`,
+        title: hit.title,
+        artist: { name: hit.artist },
+        album: null,
+        mbid: null,
         duration: hit.duration,
-        format: 'm4a',
-        url: hit.url
-      }
-    })
+        image: hit.thumbnail,
+        provider: hit.provider,
+        source: {
+          provider: hit.provider,
+          username: hit.provider,
+          filename: q,
+          duration: hit.duration,
+          format: 'm4a',
+          url: hit.url
+        }
+      })
+    }
   }
   return out
 }
@@ -660,14 +675,14 @@ async function discoverSearchInner(q) {
   out.albums = dedupeBy(
     albums.sort((a, b) => albumScore(b) - albumScore(a)),
     'mbid'
-  ).slice(0, 12)
+  ).slice(0, 20)
   out.tracks = dedupeBy(
     tracks.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)),
     'mbid'
-  ).slice(0, 10)
+  ).slice(0, 20)
   out.popularTracks = out.tracks
   out.artists = artists.map(withLibraryArtist)
-  out.playlists = playlists.slice(0, 8)
+  out.playlists = playlists.slice(0, 12)
 
   out.albums = out.albums.map(withLibraryAlbum)
 
@@ -753,7 +768,9 @@ async function catalogAlbumDetail(artist, album) {
 
 export async function discoverArtist(key) {
   if (typeof key === 'string' && key.startsWith('catalog:artist:')) {
-    return catalogArtistDetail(key.slice('catalog:artist:'.length))
+    const detail = await catalogArtistDetail(key.slice('catalog:artist:'.length))
+    detail.artist = await enrichArtist(detail.artist)
+    return detail
   }
   const spotifyId = key
   const [detail, popularTracks, albums] = await Promise.all([
@@ -770,14 +787,14 @@ export async function discoverArtist(key) {
       .slice(0, 12)
   )
   return {
-    artist: withLibraryArtist({
+    artist: await enrichArtist(withLibraryArtist({
       kind: 'artist',
       id: `artist:${spotifyId}`,
       name,
       mbid: spotifyId,
       genres,
       image: pickImage(detail.images) || albumList[0]?.image || null
-    }),
+    })),
     popularTracks: popularTracks.slice(0, 10),
     albums: albumList.map(withLibraryAlbum)
   }
