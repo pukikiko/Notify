@@ -1,0 +1,18 @@
+{
+  "name": "notify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private music streaming: Soulseek downloads, metadata enrichment, shared transcoding cache",
+  "scripts": {
+    "setup": "node scripts/setup-slskd.mjs",
+    "build": "npm --prefix frontend run build",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "start": "npm run build && node backend/src/index.js",
+    "backend": "node backend/src/index.js",
+    "dev:slskd": "./scripts/dev-slskd.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

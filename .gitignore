@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+backend/dist/
+build/
+
+# Runtime data (DB, cache, downloads)
+data/
+
+# Downloaded binaries / config (slskd, yt-dlp, etc.)
+bin/slskd-*/
+bin/*.zip
+bin/*.tar.gz
+bin/*.tgz
+bin/yt-dlp
+bin/ffmpeg
+bin/ffprobe
+bin/api-key.txt
+bin/slskd.yml
+bin/*.conf
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Coverage / testing
+coverage/
+.nyc_output/
+
+# Misc
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
