@@ -13,11 +13,18 @@ FROM node:24-bookworm-slim AS runtime
 
 WORKDIR /app
 
+ARG TARGETARCH
+
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates ffmpeg curl \
+  && apt-get install -y --no-install-recommends ca-certificates ffmpeg curl unzip \
   && rm -rf /var/lib/apt/lists/* \
-  && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -o /usr/local/bin/yt-dlp \
-  && chmod +x /usr/local/bin/yt-dlp
+  && YTDLP_ARCH=$([ "$TARGETARCH" = arm64 ] && echo yt-dlp_linux_aarch64 || echo yt-dlp_linux) \
+  && DENO_ARCH=$([ "$TARGETARCH" = arm64 ] && echo aarch64 || echo x86_64) \
+  && curl -L "https://github.com/yt-dlp/yt-dlp/releases/latest/download/${YTDLP_ARCH}" -o /usr/local/bin/yt-dlp \
+  && chmod +x /usr/local/bin/yt-dlp \
+  && curl -fsSL "https://github.com/denoland/deno/releases/latest/download/deno-${DENO_ARCH}-unknown-linux-gnu.zip" -o /tmp/deno.zip \
+  && unzip -o /tmp/deno.zip -d /usr/local/bin \
+  && rm /tmp/deno.zip
 
 COPY backend/package.json backend/package-lock.json ./backend/
 RUN npm --prefix backend ci --omit=dev
