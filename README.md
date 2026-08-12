@@ -53,6 +53,47 @@ npm --prefix frontend install
 npm start    # builds frontend, serves everything on http://localhost:4000
 ```
 
+## Docker
+
+The repo ships a `Dockerfile` and `docker-compose.yml` that run the whole app —
+backend, built frontend, and a bundled [slskd](https://github.com/slskd/slskd)
+daemon (so the real Soulseek network works out of the box).
+
+```bash
+docker compose up --build
+```
+
+Open http://localhost:4000 and register an account. slskd is exposed on
+:5030 (API) / :5031 (UI) / :50300 (Soulseek peer connections), and downloads
+land in `data/cache/original` — the same cache the backend streams from.
+
+Configuration comes from your environment (or a `.env` file next to
+`docker-compose.yml`):
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SLSKD_USERNAME` / `SLSKD_PASSWORD` | — | Soulseek network credentials for slskd |
+| `SLSKD_API_KEY` | — | API key used by the backend to talk to slskd (required for real-network mode) |
+| `SLSKD_URL` | `http://slskd:5030` | slskd API base (compose-internal hostname) |
+| `SOULSEEK_MODE` | `slskd` | `slskd` (real network, compose default) or `mock` (offline demo) |
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | — | Spotify metadata + artwork |
+| `PORT` | `4000` | host port mapped to the backend |
+| `YOUTUBE_ENABLED` / `SOUNDCLOUD_ENABLED` | `true` | yt-dlp web failover sources |
+
+Set the Soulseek credentials and an API key, then:
+
+```bash
+SLSKD_USERNAME=you SLSKD_PASSWORD=yourpass SLSKD_API_KEY=$(openssl rand -hex 24) docker compose up --build
+```
+
+`DATA_DIR` is fixed to the `./data` bind mount in the compose file, so the DB and
+cache persist across container restarts. For a fully offline demo, override the
+mode:
+
+```bash
+SOULSEEK_MODE=mock docker compose up --build
+```
+
 ## Using the real Soulseek network
 
 Notify talks to [slskd](https://github.com/slskd/slskd), the self-hosted Soulseek

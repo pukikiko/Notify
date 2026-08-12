@@ -1,0 +1,44 @@
+services:
+  notify:
+    build: .
+    container_name: notify
+    ports:
+      - "${PORT:-4000}:4000"
+    environment:
+      - PORT=4000
+      - DATA_DIR=/data
+      - SOULSEEK_MODE=${SOULSEEK_MODE:-slskd}
+      - SLSKD_URL=${SLSKD_URL:-http://slskd:5030}
+      - SLSKD_API_KEY=${SLSKD_API_KEY:-}
+      - SLSKD_API_USERNAME=${SLSKD_API_USERNAME:-}
+      - SLSKD_API_PASSWORD=${SLSKD_API_PASSWORD:-}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-}
+      - YOUTUBE_ENABLED=${YOUTUBE_ENABLED:-true}
+      - SOUNDCLOUD_ENABLED=${SOUNDCLOUD_ENABLED:-true}
+    volumes:
+      - ./data:/data
+    depends_on:
+      - slskd
+    restart: unless-stopped
+
+  slskd:
+    image: slskd/slskd:latest
+    container_name: slskd
+    ports:
+      - "5030:5030"
+      - "5031:5031"
+      - "50300:50300"
+    environment:
+      - SLSKD_SLSK_USERNAME=${SLSKD_USERNAME:-}
+      - SLSKD_SLSK_PASSWORD=${SLSKD_PASSWORD:-}
+      - SLSKD_API_KEY=${SLSKD_API_KEY:-}
+      - SLSKD_DOWNLOADS_DIR=/data/cache/original
+      - SLSKD_INCOMPLETE_DIR=/data/cache/incomplete
+      - SLSKD_SHARED_DIR=/data/cache/original
+      - SLSKD_SLSK_LISTEN_PORT=50300
+      - SLSKD_UMASK=0022
+    volumes:
+      - ./data:/data
+      - ./data/slskd:/app
+    restart: unless-stopped
