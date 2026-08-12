@@ -60,6 +60,9 @@ backend, built frontend, and a bundled [slskd](https://github.com/slskd/slskd)
 daemon (so the real Soulseek network works out of the box).
 
 ```bash
+# first run: create the cache directories slskd requires (it refuses to start without them)
+mkdir -p data/cache/original data/cache/incomplete
+
 docker compose up --build
 ```
 
@@ -83,7 +86,14 @@ Configuration comes from your environment (or a `.env` file next to
 Set the Soulseek credentials and an API key, then:
 
 ```bash
-SLSKD_USERNAME=you SLSKD_PASSWORD=yourpass SLSKD_API_KEY=$(openssl rand -hex 24) docker compose up --build
+# .env next to docker-compose.yml (git-ignored)
+SLSKD_USERNAME=you
+SLSKD_PASSWORD=yourpass
+SLSKD_API_KEY=$(openssl rand -hex 24)
+SPOTIFY_CLIENT_ID=your_client_id
+SPOTIFY_CLIENT_SECRET=your_client_secret
+
+docker compose up --build
 ```
 
 `DATA_DIR` is fixed to the `./data` bind mount in the compose file, so the DB and

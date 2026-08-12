@@ -14,7 +14,7 @@ FROM node:24-bookworm-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg curl \
+  && apt-get install -y --no-install-recommends ca-certificates ffmpeg curl \
   && rm -rf /var/lib/apt/lists/* \
   && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
   && chmod +x /usr/local/bin/yt-dlp
