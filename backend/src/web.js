@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { config } from './config.js'
+import { isSafeHttpUrl, scrubCliValue } from './safety.js'
 
 /**
  * Web providers (YouTube Music, SoundCloud) via yt-dlp. Used as failover
@@ -115,8 +116,12 @@ export async function searchTracks({ artist, album, title, duration, query, minS
   if (!cfg || !cfg.enabled()) return []
   const q = (query && query.trim()) ? query.trim() : [artist, album, title].filter(Boolean).join(' ')
   if (!q.trim()) return []
+  const cleaned = scrubCliValue(q)
+  if (!cleaned) return []
   const prefix = `${cfg.prefix()}${cfg.maxResults()}:`
-  const raw = await pExec(['-J', '--no-playlist', '--flat-playlist', prefix + q], { timeout: cfg.timeoutMs() })
+  // '--' guarantees the search string is treated as a positional/URL by yt-dlp
+  // even if it begins with option-looking characters.
+  const raw = await pExec(['-J', '--no-playlist', '--flat-playlist', '--', prefix + cleaned], { timeout: cfg.timeoutMs() })
   let entries = []
   try {
     entries = JSON.parse(raw).entries || []
@@ -182,7 +187,11 @@ export function searchSoundCloudTracks(opts, limit = 8) {
  * (e.g. outputBase.webm / outputBase.m4a). Returns the real file path.
  */
 export async function downloadWeb(url, outputBase, { timeoutMs } = {}) {
-  if (!url) throw new Error('no url to download')
+  // The url is ultimately handed to yt-dlp as an argv element. Only accept
+  // well-formed public http(s) URLs: anything else (a leading '-', file://,
+  // private addresses, embedded whitespace) is rejected outright so a crafted
+  // value can never be parsed as a yt-dlp option or reach local resources.
+  if (!isSafeHttpUrl(url)) throw new Error('refusing to download non-http(s) url')
   const args = [
     // Prefer streamable containers (webm/ogg) so the partial file can be fed
     // to the transcoder in real time while yt-dlp is still downloading; m4a
@@ -191,6 +200,8 @@ export async function downloadWeb(url, outputBase, { timeoutMs } = {}) {
     '--no-playlist',
     '--no-progress',
     '-o', `${outputBase}.%(ext)s`,
+    // '--' stops yt-dlp from ever interpreting the trailing url as an option
+    '--',
     url
   ]
   await pExec(args, { timeout: timeoutMs || config.youtube.downloadTimeoutMs })

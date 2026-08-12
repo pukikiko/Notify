@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { ART_DIR } from './config.js'
+import { isImageBuffer } from './safety.js'
 import { spSearchAlbums, spSearchTracks, spArtistDetail, spArtistRelated, fetchSpotifyImage } from './spotify.js'
 
 const CRC_TABLE = (() => {
@@ -87,9 +88,16 @@ export async function extractFileMetadata(filePath) {
   const picture = Array.isArray(common.picture) ? common.picture[0] : null
   let coverPath = null
   if (picture && picture.data) {
-    const ext = picture.format.includes('png') ? 'png' : 'jpg'
-    coverPath = path.join(ART_DIR, `embedded-${path.basename(filePath, path.extname(filePath))}.${ext}`)
-    if (!fs.existsSync(coverPath)) fs.writeFileSync(coverPath, picture.data)
+    // The picture bytes live inside a peer-supplied audio file, so verify they
+    // are a real image before writing them to a predictable path — otherwise a
+    // crafted file could plant arbitrary bytes (e.g. a yt-dlp config) as cover
+    // art that a later --config-location style bug could load.
+    const data = Buffer.isBuffer(picture.data) ? picture.data : Buffer.from(picture.data)
+    if (isImageBuffer(data)) {
+      const ext = picture.format.includes('png') ? 'png' : 'jpg'
+      coverPath = path.join(ART_DIR, `embedded-${path.basename(filePath, path.extname(filePath))}.${ext}`)
+      if (!fs.existsSync(coverPath)) fs.writeFileSync(coverPath, data)
+    }
   }
   return {
     title: common.title || path.basename(filePath, path.extname(filePath)),
@@ -123,6 +131,11 @@ export async function extractEmbeddedCover(filePath) {
 }
 
 export async function saveTrackCover(trackId, buffer, contentType) {
+  // Only real images may be persisted as cover art: the content can arrive
+  // from an arbitrary URL (fetchRemoteCover), so verifying the magic bytes
+  // guarantees an attacker can never plant an arbitrary file (e.g. a yt-dlp
+  // config) at a predictable on-disk path.
+  if (!isImageBuffer(buffer)) throw new Error('refusing to save non-image cover data')
   const ext = (contentType || '').includes('png') ? 'png' : 'jpg'
   const p = path.join(ART_DIR, `track-${trackId}.${ext}`)
   fs.writeFileSync(p, buffer)

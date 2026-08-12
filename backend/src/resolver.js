@@ -236,10 +236,13 @@ function withLibraryAlbum(a) {
 /* ------------------------------------------------------------------ */
 
 /** Expected download time for a Soulseek candidate, in seconds. A faster
-    peer (higher advertised upload speed in kbps) and a smaller file finish
-    sooner; peers that don't advertise a speed are assumed modestly fast. */
+    peer and a smaller file finish sooner; peers that don't advertise a speed
+    are assumed modestly fast. slskd reports a peer's upload speed in
+    bytes/sec, so the advertised speed is used directly as a byte rate. */
 function estimatedDownloadSeconds({ size = 0, uploadSpeed = 0 }) {
-  const kbps = uploadSpeed > 0 ? uploadSpeed : config.soularr.assumedUploadSpeedKbps
+  if (size <= 0) return Infinity
+  if (uploadSpeed > 0) return size / uploadSpeed
+  const kbps = config.soularr.assumedUploadSpeedKbps
   if (!kbps) return Infinity
   return (size * 8) / (kbps * 1000)
 }
@@ -263,7 +266,11 @@ export async function findBestTrackSource({ artist, album, title }) {
         if (verifyFiletype(file, config.soularr.allowedFiletypes[t])) { tier = t; break }
       }
       if (tier < 0) continue
-      if (artistScore(file.filename, artist) < config.soularr.minimumArtistScore) continue
+      // The artist check runs against the whole path — the share directory is
+      // usually where the artist appears ("Ninajirachi\...\02 - 1x1.flac" has
+      // no artist in the filename itself), so judge the candidate on the full
+      // path, not just the basename.
+      if (artistScore(`${fileDir(file.filename)} ${file.filename}`.trim(), artist) < config.soularr.minimumArtistScore) continue
       const ext = config.soularr.allowedFiletypes[tier].split(' ')[0]
       const ratio = ratioVariants(`${title}.${ext}`, file.filename, album, config.soularr.minimumMatchRatio)
       if (ratio <= config.soularr.minimumMatchRatio) continue

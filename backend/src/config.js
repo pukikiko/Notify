@@ -24,7 +24,11 @@ export const config = {
     // if a queued Soulseek transfer hasn't started within this window, the
     // source is abandoned — the next-best Soulseek candidate is tried, and
     // only once those are exhausted does the track fall back to YouTube Music
-    downloadStartTimeoutMs: Number(process.env.SLSKD_DOWNLOAD_START_TIMEOUT_MS || 60000)
+    downloadStartTimeoutMs: Number(process.env.SLSKD_DOWNLOAD_START_TIMEOUT_MS || 60000),
+    // if a transfer reports "Completed, Succeeded" but its file never shows up
+    // in the cache within this window, the source is treated as failed and the
+    // next-best candidate is tried
+    completeMissingTimeoutMs: Number(process.env.SLSKD_COMPLETE_MISSING_TIMEOUT_MS || 30000)
   },
   spotify: {
     // Client Credentials from the Spotify Developer dashboard — used for all

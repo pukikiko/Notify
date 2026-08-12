@@ -4,12 +4,17 @@ import { db, now, safeJson } from './db.js'
 import { ORIGINAL_DIR, ART_DIR, config } from './config.js'
 import { soulseek, synthesizeMockTrack, isMockMode } from './soulseek.js'
 import { youtubeEnabled, soundcloudEnabled, webSourceEnabled, searchYtMusic, searchSoundCloud, downloadWeb } from './web.js'
+import { isSafeHttpUrl } from './safety.js'
 import { extractFileMetadata, extractEmbeddedCover, enrichWithSpotify, saveTrackCover, generateAlbumCover } from './metadata.js'
 import { spotifyConfigured } from './spotify.js'
 
 const POLL_MS = 2000
 let pollTimer = null
 let polling = false
+// download row id → timestamp when a "Completed, Succeeded" transfer was first
+// seen without its file on disk; used to bail on transfers that claim success
+// but whose file never appears
+const missingFileSince = new Map()
 
 /* ------------------------------------------------------------------ */
 /* filename heuristics                                                 */
@@ -174,7 +179,7 @@ export function enqueueDownload({ userId, provider = 'soulseek', username, filen
   let albumId = null
   if (finalArtist && finalArtist !== 'Unknown Artist') {
     artistId = upsertArtist(finalArtist).id
-    if (finalAlbum) albumId = upsertAlbum(finalAlbum, artistId, { image: image && /^https?:\/\//i.test(image) ? image : null }).id
+    if (finalAlbum) albumId = upsertAlbum(finalAlbum, artistId, { image: isSafeHttpUrl(image) ? image : null }).id
   }
 
   const trx = db.prepare(`
@@ -186,9 +191,9 @@ export function enqueueDownload({ userId, provider = 'soulseek', username, filen
   db.prepare(`
     INSERT INTO downloads (user_id, track_id, username, filename, size, provider, ref, sources, status, added_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'queued', ?)
-  `).run(userId, trackId, username || null, filename, size, provider, ref || null, JSON.stringify(alternates || []), now())
+  `).run(userId, trackId, username || null, filename, size, provider, ref && isSafeHttpUrl(ref) ? ref : null, JSON.stringify(alternates || []), now())
 
-  if (image && /^https?:\/\//i.test(image)) {
+  if (isSafeHttpUrl(image)) {
     fetchRemoteCover(trackId, image)
   }
 
@@ -217,6 +222,7 @@ export function enqueueDownload({ userId, provider = 'soulseek', username, filen
 
 async function fetchRemoteCover(trackId, url) {
   try {
+    if (!isSafeHttpUrl(url)) return
     const existing = db.prepare('SELECT art_path FROM tracks WHERE id = ?').get(trackId)
     if (existing?.art_path) return
     const controller = new AbortController()
@@ -464,8 +470,18 @@ async function poll() {
       return
     }
 
-    const isSuccess = (s) => /complete|finished/i.test(s || '')
-    const isFailure = (s) => /fail|reject|cancel|timeout|missing|error|insufficient/i.test(s || '')
+    // slskd reports transfer state as a comma-separated pair, e.g.
+    // "Completed, Succeeded", "Completed, Rejected", "Completed, TimedOut",
+    // "Completed, Cancelled". A transfer is a failure if ANY qualifier says
+    // so — a "Completed" prefix alone must never be read as success, or a
+    // rejected/timed-out download would be treated as finished and we'd wait
+    // forever for a file that never appears.
+    const isFailure = (s) => /reject|cancel|timeout|timed|fail|missing|error|insufficient|denied/i.test(s || '')
+    const isSuccess = (s) => {
+      const state = s || ''
+      if (isFailure(state)) return false
+      return /complete|succeed|finish/i.test(state)
+    }
     const transferStarted = (m) => {
       if (!m) return false
       if (m.bytesReceived > 0) return true
@@ -474,12 +490,22 @@ async function poll() {
 
     for (const d of pending) {
       if (d.provider !== 'soulseek') continue
-      const match = transfers.find((t) => t.username === d.username && t.filename === d.filename)
-      if (match && isSuccess(match.state)) {
+      // slskd keeps every historical transfer, so a re-enqueued source can
+      // have both a stale (e.g. previously rejected) and a fresh transfer with
+      // the same username/filename. Always react to the most recently enqueued
+      // one, not whatever happens to come first in the list.
+      const matches = transfers.filter((t) => t.username === d.username && t.filename === d.filename)
+      const match = matches.reduce((a, b) => (String(b.enqueuedAt || '') > String(a.enqueuedAt || '') ? b : a), matches[0])
+      if (match && isFailure(match.state)) {
+        console.warn('[downloader] soulseek transfer failed, trying next source', d.filename, match.state)
+        fallbackFromSoulseekFailure(d.track_id, { username: d.username, filename: d.filename })
+          .catch(() => markFailed(d.track_id))
+      } else if (match && isSuccess(match.state)) {
         const filePath = findDownloadedFile(d.filename)
         if (filePath) {
           try {
             await ingestFile(d.track_id, filePath)
+            missingFileSince.delete(d.id)
             continue
           } catch (err) {
             // transfer completed but the file is corrupt/unreadable — treat it
@@ -490,11 +516,18 @@ async function poll() {
             continue
           }
         }
-        // transfer reports complete but file not found yet; keep waiting a tick
-      } else if (match && isFailure(match.state)) {
-        console.warn('[downloader] soulseek transfer failed, trying next source', d.filename, match.state)
-        fallbackFromSoulseekFailure(d.track_id, { username: d.username, filename: d.filename })
-          .catch(() => markFailed(d.track_id))
+        // Transfer reports complete but the file hasn't appeared yet (slskd
+        // moves it into the cache immediately after finishing, so this should
+        // only last a tick or two). If it stays missing the source is no good
+        // — stop waiting and try the next candidate.
+        const since = missingFileSince.get(d.id) || now()
+        missingFileSince.set(d.id, since)
+        if (now() - since > config.slskd.completeMissingTimeoutMs) {
+          missingFileSince.delete(d.id)
+          console.warn('[downloader] soulseek transfer reported complete but file never appeared, trying next source', d.filename, match.state)
+          fallbackFromSoulseekFailure(d.track_id, { username: d.username, filename: d.filename })
+            .catch(() => markFailed(d.track_id))
+        }
       } else if (now() - d.added_at >= config.slskd.downloadStartTimeoutMs && !transferStarted(match)) {
         // the peer never started the transfer (still queued, or the transfer
         // never appeared) — try the next-best Soulseek candidate, and only

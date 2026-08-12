@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import { config, ORIGINAL_DIR } from './config.js'
+import { scrubCliValue } from './safety.js'
 
 const pExec = (cmd, args, opts = {}) =>
   new Promise((resolve, reject) => {
@@ -207,14 +208,18 @@ class SlskdSoulseek {
   }
 
   _normalizeFile(f) {
-    const bitrate = f.bitrate || 0
+    // slskd serializes attributes as camelCase (bitRate, bitDepth, sampleRate);
+    // accept both casings so bitrate-matched tiers (mp3 320, mp3, ...) can be
+    // verified instead of always failing because f.bitrate is undefined.
+    const bitrate = f.bitRate || f.bitrate || 0
+    const sampleRate = f.sampleRate || 0
     return {
       filename: f.filename,
       size: f.size,
       bitrate,
       bitDepth: f.bitDepth,
-      length: f.length || (bitrate > 0 && f.sampleRate ? Math.round((f.size * 8) / (bitrate * 1000)) : null),
-      sampleRate: f.sampleRate,
+      length: f.length || (bitrate > 0 && sampleRate ? Math.round((f.size * 8) / (bitrate * 1000)) : null),
+      sampleRate,
       format: (f.filename || '').split('.').pop().toUpperCase()
     }
   }
@@ -247,24 +252,54 @@ class SlskdSoulseek {
   }
 
   async _doSearch(query, limit = 50) {
+    // slskd forwards searchTimeout straight to the Soulseek client library,
+    // which treats it as an inactivity window in MILLISECONDS — the search
+    // completes this long after its last response. The config value is already
+    // in ms (default 5000 = 5s), so pass it through; dividing by 1000 turned
+    // it into a 5ms timeout and every search completed instantly with 0
+    // responses. A floor of 1s keeps a bad config value from doing the same.
+    const searchTimeoutMs = Math.max(1000, config.soularr.searchTimeoutMs)
     const { id } = await this._request('POST', '/api/v0/searches', {
       searchText: query,
-      searchTimeout: config.soularr.searchTimeoutMs,
+      searchTimeout: searchTimeoutMs,
       filterResponses: true,
       maximumPeerQueueLength: config.soularr.maximumPeerQueueLength,
       minimumPeerUploadSpeed: config.soularr.minimumPeerUploadSpeed
     })
     // Poll for the network to return responses. Check immediately, then every
-    // 700ms — most peers answer within a couple of seconds and waiting 1.5s
-    // before the first check made every search/play feel unresponsive.
+    // 700ms. Keep collecting until the search reports itself complete (so a
+    // slow peer's answer isn't missed because a faster one responded first)
+    // or until the deadline passes; the responses endpoint re-reads the whole
+    // accumulated set each poll, so the last known set is always the fullest.
     let responses = []
-    for (let attempt = 0; attempt < 8; attempt++) {
+    let lastCount = 0
+    let lastResponseAt = 0
+    const deadline = Date.now() + Math.max(20000, searchTimeoutMs + 10000)
+    while (Date.now() < deadline) {
       try {
-        responses = await this._request('GET', `/api/v0/searches/${id}/responses?filter=isCompleteFile==true`)
+        const current = await this._request('GET', `/api/v0/searches/${id}/responses`)
+        if (Array.isArray(current)) {
+          responses = current
+          if (current.length > lastCount) {
+            lastCount = current.length
+            lastResponseAt = Date.now()
+          }
+        }
       } catch {
-        responses = []
+        /* keep the last known responses */
       }
-      if (responses.length) break
+      let complete = false
+      try {
+        const state = await this._request('GET', `/api/v0/searches/${id}`)
+        complete = !!(state && state.isComplete)
+      } catch {
+        /* keep polling */
+      }
+      if (complete) break
+      // Once responses start arriving, give straggler peers a brief grace
+      // period to answer before locking in — but never block on a search that
+      // keeps streaming for the whole collection window.
+      if (responses.length && Date.now() - lastResponseAt > 1500) break
       await new Promise((r) => setTimeout(r, 700))
     }
     const normalized = responses.map((r) => ({
@@ -305,6 +340,9 @@ class SlskdSoulseek {
             size: f.size,
             bytesReceived: f.bytesTransferred,
             state: f.state,
+            enqueuedAt: f.enqueuedAt || null,
+            endedAt: f.endedAt || null,
+            percentComplete: f.percentComplete ?? null,
             path: null
           })
         }
@@ -326,12 +364,18 @@ export async function synthesizeMockTrack({ trackId, title, artist, album, durat
   const seed = seedRandom(`${artist}-${title}-${trackId}`)
   const base = 200 + Math.floor(seed() * 400)
   const outFile = outputPath || path.join(ORIGINAL_DIR, `mock-${trackId}.${format}`)
+  // title/artist/album come from the (peer-controlled) download filename and
+  // land in ffmpeg's argv; scrub control characters so they can never look
+  // like options or break out of a single argv element.
+  const safeTitle = scrubCliValue(title)
+  const safeArtist = scrubCliValue(artist)
+  const safeAlbum = scrubCliValue(album)
   const args = [
     '-y', '-f', 'lavfi', '-i', `sine=frequency=${base}:duration=${duration}`,
     '-af', `volume=0.12,tremolo=f=${2 + seed() * 6}:d=0.8`,
-    '-metadata', `title=${title}`,
-    '-metadata', `artist=${artist}`,
-    '-metadata', `album=${album}`,
+    '-metadata', `title=${safeTitle}`,
+    '-metadata', `artist=${safeArtist}`,
+    '-metadata', `album=${safeAlbum}`,
     '-metadata', `track=${Math.floor(seed() * 12) + 1}`,
     '-metadata', `genre=${seed() > 0.5 ? 'Electronic' : 'Rock'}`
   ]
