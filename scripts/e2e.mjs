@@ -52,11 +52,12 @@ const shared = lib.data.tracks.find((t) => t.id === trackId)
 check('alice sees bob-downloaded track in shared pool', !!shared && shared.status === 'available', shared?.title)
 
 // ---- both stream it, each in their own preferred format ----
+await req('/api/auth/settings', { method: 'PUT', token: TA, body: { preferredFormat: 'opus-96' } })
 await req('/api/auth/settings', { method: 'PUT', token: TB, body: { preferredFormat: 'opus-160' } })
 const sA = await fetch(`${BASE}/api/stream/${trackId}`, { headers: { Authorization: `Bearer ${TA}`, Range: 'bytes=0-999' } })
 const sB = await fetch(`${BASE}/api/stream/${trackId}`, { headers: { Authorization: `Bearer ${TB}`, Range: 'bytes=0-999' } })
-check('alice streams (audio/mpeg)', sA.status === 206 && (sA.headers.get('content-type') || '').includes('audio/mpeg'), sA.status + ' ' + sA.headers.get('content-type'))
-check('bob streams (audio/ogg opus)', sB.status === 206 && (sB.headers.get('content-type') || '').includes('audio/ogg'), sB.status + ' ' + sB.headers.get('content-type'))
+check('alice streams (opus 96)', sA.status === 206 && (sA.headers.get('content-type') || '').includes('audio/ogg'), sA.status + ' ' + sA.headers.get('content-type'))
+check('bob streams (opus 160)', sB.status === 206 && (sB.headers.get('content-type') || '').includes('audio/ogg'), sB.status + ' ' + sB.headers.get('content-type'))
 
 // ---- radio ----
 const r1 = await req(`/api/radio/seed?type=track&id=${trackId}&limit=10`, { token: TA })
@@ -67,8 +68,8 @@ const r3 = await req('/api/radio/seed?type=album&id=3&limit=10', { token: TA })
 check('album radio works', r3.data.tracks.length > 0)
 
 // ---- settings ----
-const set = await req('/api/auth/settings', { method: 'PUT', token: TA, body: { preferredFormat: 'mp3-192' } })
-check('alice settings saved', set.data.settings.preferredFormat === 'mp3-192')
+const set = await req('/api/auth/settings', { method: 'PUT', token: TA, body: { preferredFormat: 'opus-96' } })
+check('alice settings saved', set.data.settings.preferredFormat === 'opus-96')
 
 // ---- status ----
 const st = await req('/api/status', { token: TA })

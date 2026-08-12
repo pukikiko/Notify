@@ -15,11 +15,8 @@ const inFlight = new Map()
 
 export function encodeArgs(format) {
   switch (format) {
-    case 'mp3-320': return { codec: 'libmp3lame', args: ['-c:a', 'libmp3lame', '-b:a', '320k', '-joint_stereo', '1'] }
-    case 'mp3-192': return { codec: 'libmp3lame', args: ['-c:a', 'libmp3lame', '-b:a', '192k', '-joint_stereo', '1'] }
-    case 'vorbis-192': return { codec: 'libvorbis', args: ['-c:a', 'libvorbis', '-b:a', '192k'] }
     case 'opus-160': return { codec: 'libopus', args: ['-c:a', 'libopus', '-b:a', '160k'] }
-    case 'flac': return { codec: 'flac', args: ['-c:a', 'flac'] }
+    case 'opus-96': return { codec: 'libopus', args: ['-c:a', 'libopus', '-b:a', '96k'] }
     default: return null
   }
 }
@@ -30,9 +27,7 @@ export function isAlreadyFormat(sourcePath, format) {
   const spec = encodeArgs(format)
   if (!spec) return true
   const ext = path.extname(sourcePath).replace('.', '').toLowerCase()
-  if (spec.codec === 'libmp3lame' && ext === 'mp3') return true
-  if (spec.codec === 'flac' && ext === 'flac') return true
-  if ((spec.codec === 'libvorbis' || spec.codec === 'libopus') && ext === 'ogg') return true
+  if (spec.codec === 'libopus' && (ext === 'ogg' || ext === 'opus')) return true
   return false
 }
 

@@ -1,8 +1,11 @@
 import crypto from 'node:crypto'
 import { db, now } from './db.js'
+import { FORMATS } from './config.js'
 
 const SCRYPT = { N: 16384, r: 8, p: 1 }
 const KEYLEN = 64
+
+const DEFAULT_FORMAT = 'opus-160'
 
 export function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex')
@@ -34,15 +37,20 @@ export function publicUser(row) {
 export function safeSettings(str) {
   try {
     const s = JSON.parse(str || '{}')
-    if (!s.preferredFormat) s.preferredFormat = 'mp3-320'
+    if (!FORMATS[s.preferredFormat]) s.preferredFormat = DEFAULT_FORMAT
     return s
   } catch {
-    return { preferredFormat: 'mp3-320' }
+    return { preferredFormat: DEFAULT_FORMAT }
   }
 }
 
 export function updateSettings(userId, settings) {
   const user = getUserById(userId)
+  // Never persist a format that isn't offered anymore — a stale value would
+  // otherwise break streaming for that user.
+  if (settings.preferredFormat !== undefined && !FORMATS[settings.preferredFormat]) {
+    delete settings.preferredFormat
+  }
   const merged = { ...safeSettings(user.settings), ...settings }
   db.prepare('UPDATE users SET settings = ? WHERE id = ?').run(JSON.stringify(merged), userId)
   return publicUser(getUserById(userId))

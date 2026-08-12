@@ -16,7 +16,7 @@ router.post('/register', (req, res) => {
   if (exists) return res.status(409).json({ error: 'Username already taken' })
 
   const info = db.prepare('INSERT INTO users (username, password_hash, created_at, settings) VALUES (?, ?, ?, ?)')
-    .run(username, hashPassword(password), now(), JSON.stringify({ preferredFormat: 'mp3-320' }))
+    .run(username, hashPassword(password), now(), JSON.stringify({ preferredFormat: 'opus-160' }))
   const userId = Number(info.lastInsertRowid)
   const token = createSession(userId)
   res.status(201).json({ token, user: publicUser(db.prepare('SELECT id, username, created_at, settings FROM users WHERE id = ?').get(userId)) })

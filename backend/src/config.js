@@ -106,17 +106,18 @@ export const config = {
     assumedUploadSpeedKbps: Number(process.env.SOULAR_ASSUMED_UPLOAD_SPEED_KBPS || 100),
     // how many additional Soulseek candidates are kept as fallbacks when the
     // best download fails, before falling back to YouTube Music/SoundCloud
-    maxAlternateSources: Number(process.env.SOULAR_MAX_ALTERNATE_SOURCES || 5)
+    maxAlternateSources: Number(process.env.SOULAR_MAX_ALTERNATE_SOURCES || 5),
+    // when a candidate reports a track length, only accept it if it's within
+    // this many seconds of the expected (Spotify) duration — stops a live /
+    // remix / extended version from being picked over the album track
+    maxDurationDifference: Number(process.env.SOULAR_MAX_DURATION_DIFFERENCE || 3)
   }
 }
 
 export const FORMATS = {
-  original: { label: 'Original (no transcode)', mime: 'application/octet-stream', ext: null },
-  'mp3-320': { label: 'MP3 320kbps', mime: 'audio/mpeg', ext: 'mp3' },
-  'mp3-192': { label: 'MP3 192kbps', mime: 'audio/mpeg', ext: 'mp3' },
-  'vorbis-192': { label: 'Ogg Vorbis 192kbps', mime: 'audio/ogg', ext: 'ogg' },
-  'opus-160': { label: 'Opus 160kbps', mime: 'audio/ogg', ext: 'ogg' },
-  'flac': { label: 'FLAC (lossless)', mime: 'audio/flac', ext: 'flac' }
+  original: { label: 'Super High Quality (Original Quality)', mime: 'application/octet-stream', ext: null },
+  'opus-160': { label: 'High Quality (Opus 160kbps)', mime: 'audio/ogg', ext: 'ogg' },
+  'opus-96': { label: 'Medium Quality (Opus 96kbps)', mime: 'audio/ogg', ext: 'ogg' }
 }
 
 export function formatInfo(format) {

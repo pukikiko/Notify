@@ -12,11 +12,11 @@ function fmtBytes(n) {
 
 export default function SettingsView() {
   const { user, status, updateSettings, refreshStatus } = useApp()
-  const [format, setFormat] = useState(user?.settings?.preferredFormat || 'mp3-320')
+  const [format, setFormat] = useState(user?.settings?.preferredFormat || 'opus-160')
   const [saved, setSaved] = useState(false)
   const [counts, setCounts] = useState(null)
 
-  useEffect(() => { setFormat(user?.settings?.preferredFormat || 'mp3-320') }, [user?.settings?.preferredFormat])
+  useEffect(() => { setFormat(user?.settings?.preferredFormat || 'opus-160') }, [user?.settings?.preferredFormat])
 
   useEffect(() => {
     api('/status/user').then((c) => setCounts(c)).catch(() => {})

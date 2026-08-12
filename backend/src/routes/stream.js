@@ -94,7 +94,7 @@ router.get('/stream/:trackId', authMiddleware, async (req, res) => {
     return res.status(410).json({ error: 'Source file missing from cache' })
   }
 
-  const format = req.userSettings.preferredFormat || 'mp3-320'
+  const format = req.userSettings.preferredFormat || 'opus-160'
   try {
     const { path: outPath, transcoded } = getTranscodedPath(track.source_path, format)
     if (transcoded && !fs.existsSync(outPath)) {
@@ -114,7 +114,7 @@ router.get('/stream/:trackId', authMiddleware, async (req, res) => {
     the growing transcode output is served — in both cases playback begins as
     soon as decodable audio exists, while the download continues. */
 function serveLiveTrack(req, res, track) {
-  const format = req.userSettings.preferredFormat || 'mp3-320'
+  const format = req.userSettings.preferredFormat || 'opus-160'
   const ext = liveSourceExt(track)
   const direct = format === 'original' || (ext && isAlreadyFormat(`x.${ext}`, format))
   if (direct) {

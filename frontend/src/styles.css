@@ -150,6 +150,15 @@ input, select, textarea {
 .topbar-search:focus-within { box-shadow: 0 0 0 2px var(--sp-black) inset; }
 
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.topbar-icon-btn {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-text-sub);
+}
+.topbar-icon-btn:hover { color: var(--sp-text); background: #ffffff1a; }
 .topbar-user {
   display: flex;
   align-items: center;
@@ -1231,6 +1240,7 @@ select.sp-select {
   .topbar-arrows button { width: 30px; height: 30px; }
   .topbar-search { min-width: 0; height: 36px; padding: 0 10px; }
   .topbar-right { gap: 0; }
+  .topbar-icon-btn { width: 30px; height: 30px; }
   .topbar-user { width: 32px; height: 32px; padding: 3px; justify-content: center; }
   .topbar-user .avatar { width: 26px; height: 26px; }
   .topbar-user { font-size: 0; }

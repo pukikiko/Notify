@@ -247,8 +247,16 @@ function estimatedDownloadSeconds({ size = 0, uploadSpeed = 0 }) {
   return (size * 8) / (kbps * 1000)
 }
 
-export async function findBestTrackSource({ artist, album, title }) {
+export async function findBestTrackSource({ artist, album, title, duration }) {
   const query = buildQuery(artist, title)
+  // A Spotify-provided duration lets us reject wrong recordings outright: a
+  // live / remix / extended version is usually minutes off the album track,
+  // so only candidates whose reported length lands within the tolerance are
+  // kept. When no duration is known (or a file doesn't advertise a length)
+  // the filter is skipped rather than dropping a potentially good source.
+  const hasDuration = Number.isFinite(duration) && duration > 0
+  const maxDurationDiff = config.soularr.maxDurationDifference
+  const lengthDelta = (c) => (hasDuration && c.length ? Math.abs(c.length - duration) : Infinity)
   // One search serves every quality tier: slskd already filters to complete
   // files, and each file is then scored against the tier it best satisfies.
   let results = []
@@ -274,7 +282,7 @@ export async function findBestTrackSource({ artist, album, title }) {
       const ext = config.soularr.allowedFiletypes[tier].split(' ')[0]
       const ratio = ratioVariants(`${title}.${ext}`, file.filename, album, config.soularr.minimumMatchRatio)
       if (ratio <= config.soularr.minimumMatchRatio) continue
-      candidates.push({
+      const candidate = {
         tier,
         username: user.username,
         filename: file.filename,
@@ -284,7 +292,9 @@ export async function findBestTrackSource({ artist, album, title }) {
         bitrate: file.bitrate,
         ratio,
         time: estimatedDownloadSeconds({ size: file.size, uploadSpeed: user.uploadSpeed })
-      })
+      }
+      if (hasDuration && candidate.length && Math.abs(candidate.length - duration) > maxDurationDiff) continue
+      candidates.push(candidate)
     }
   }
   if (!candidates.length) return null
@@ -298,12 +308,17 @@ export async function findBestTrackSource({ artist, album, title }) {
     return true
   })
   // Rank every candidate: the quality tier the file satisfies comes first
-  // (lossless tiers before lossy), then expected download time (fastest peer +
-  // smallest file), with the best match as tiebreak. The best is queued
-  // immediately and the rest are kept as alternates so a failed download can
-  // retry the next-best Soulseek source before giving up.
+  // (lossless tiers before lossy), then how close the file's length is to the
+  // expected (Spotify) duration (files without a known length rank last so a
+  // verified match always beats one we couldn't check), then expected download
+  // time (fastest peer + smallest file), with the best match as tiebreak. The
+  // best is queued immediately and the rest are kept as alternates so a failed
+  // download can retry the next-best Soulseek source before giving up.
   unique.sort((a, b) => {
     if (a.tier !== b.tier) return a.tier - b.tier
+    const da = lengthDelta(a)
+    const db = lengthDelta(b)
+    if (da !== db) return da - db
     if (a.time !== b.time) return a.time - b.time
     if (b.ratio !== a.ratio) return b.ratio - a.ratio
     return a.size - b.size
@@ -919,7 +934,7 @@ export async function playTrack({ userId, artist, album, title, mbid, image, dur
     if (isMockMode()) {
       src = fabricateSource(artist, album, title)
     } else {
-      src = await findBestTrackSource({ artist, album, title })
+      src = await findBestTrackSource({ artist, album, title, duration })
       if (!src) src = await findWebTrackSource({ artist, album, title, duration })
     }
   }

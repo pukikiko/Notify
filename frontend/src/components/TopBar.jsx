@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '../store'
-import { ArrowLeftIcon, ArrowRightIcon, SearchIcon, LogoutIcon } from '../icons'
+import { ArrowLeftIcon, ArrowRightIcon, SearchIcon, LogoutIcon, SettingsIcon } from '../icons'
 
 function useNavStack() {
   const stack = useRef([])
@@ -85,6 +85,9 @@ export default function TopBar({ view, navigate }) {
       </div>
 
       <div className="topbar-right">
+        <button className="topbar-icon-btn" title="Settings" aria-label="Settings" onClick={() => navigate('/settings')}>
+          <SettingsIcon size={20} />
+        </button>
         <button className="topbar-user" title={`${user?.username} · Log out`} onClick={logout}>
           <span className="avatar">{(user?.username || 'U').slice(0, 1).toUpperCase()}</span>
           {user?.username}

@@ -5,7 +5,7 @@ import { authMiddleware } from '../auth.js'
 import { db } from '../db.js'
 import { soulseek } from '../soulseek.js'
 import { youtubeEnabled, soundcloudEnabled } from '../web.js'
-import { config, ORIGINAL_DIR, TRANSCODED_DIR, formatInfo } from '../config.js'
+import { config, ORIGINAL_DIR, TRANSCODED_DIR, FORMATS } from '../config.js'
 
 const router = Router()
 
@@ -17,7 +17,7 @@ router.get('/', authMiddleware, async (req, res) => {
   const available = db.prepare("SELECT COUNT(*) c FROM tracks WHERE status = 'available'").get().c
   const downloading = db.prepare("SELECT COUNT(*) c FROM tracks WHERE status = 'downloading'").get().c
   const formats = {}
-  for (const [key, info] of Object.entries(formatInfo)) formats[key] = info.label
+  for (const [key, info] of Object.entries(FORMATS)) formats[key] = info.label
   res.json({
     soulseek: ss,
     sources: {
