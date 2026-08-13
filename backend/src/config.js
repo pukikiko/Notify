@@ -37,6 +37,24 @@ export const config = {
     clientId: process.env.SPOTIFY_CLIENT_ID || '',
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET || ''
   },
+  wikipedia: {
+    // Wikimedia requires every request to carry a descriptive User-Agent
+    // identifying the client with contact information; requests without one
+    // (or with a browser default UA) are throttled with 403/429. Include
+    // contact info so Wikimedia operators can reach you if traffic is a
+    // problem, e.g. "Notify/1.0 (https://example.org/; admin@example.org)".
+    userAgent: process.env.WIKI_USER_AGENT || 'Notify/1.0 (self-hosted music server; set WIKI_USER_AGENT with contact info)',
+    // maxlag (seconds): lower values are politer to Wikimedia servers under
+    // load — the API delays/refuses while replication lag exceeds this.
+    maxlag: Number(process.env.WIKI_MAXLAG || 5),
+    // how long a resolved artist entry is served from cache before it is
+    // re-fetched (days). Wikipedia bios/artwork are effectively static, so a
+    // long TTL keeps traffic near zero.
+    cacheTtlDays: Number(process.env.WIKI_CACHE_TTL_DAYS || 30),
+    // how long a negative result (artist has no article) is cached, so we
+    // don't re-ask for artists that will never resolve.
+    missTtlHours: Number(process.env.WIKI_MISS_TTL_HOURS || 24)
+  },
   discover: {
     // Spotify's fuzzy search returns *something* for almost any query, even
     // when it doesn't actually have the track. A search is only counted as
