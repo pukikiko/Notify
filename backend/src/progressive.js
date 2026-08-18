@@ -382,7 +382,25 @@ export function serveGrowing(req, res, { candidates, done, mime, knownTotal = nu
     const start = m && m[1] !== undefined && m[1] !== '' ? parseInt(m[1], 10) : 0
     const endRaw = m && m[2] !== undefined && m[2] !== '' ? parseInt(m[2], 10) : null
     if (!isNaN(start) && start >= 0 && start < avail) {
-      const end = Math.min(endRaw ?? avail - 1, avail - 1)
+      // Open-ended range (`bytes=start-`): the file is still growing, so the
+      // response must NOT be clamped to what exists right now. Serving only
+      // the current bytes with a Content-Length makes clients (ExoPlayer,
+      // browsers) read exactly that much, hit EOF and treat the track as
+      // finished — which skips to the next song once the partial data plays
+      // out. Instead respond with no Content-Length (chunked) and keep
+      // following the file's growth until the download completes.
+      if (endRaw == null) {
+        res.writeHead(206, {
+          'Content-Type': mime,
+          'Content-Range': `bytes ${start}-*/${knownTotal ?? '*'}`,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'no-store'
+        })
+        const reader = new GrowingFileReader({ candidates, done, offset: start })
+        reader.pipe(res)
+        return
+      }
+      const end = Math.min(endRaw, avail - 1)
       res.writeHead(206, {
         'Content-Type': mime,
         'Content-Range': `bytes ${start}-${end}/${knownTotal ?? '*'}`,
@@ -421,7 +439,22 @@ export function serveLiveTranscode(req, res, { trackId, format }) {
     const start = m && m[1] !== undefined && m[1] !== '' ? parseInt(m[1], 10) : 0
     const endRaw = m && m[2] !== undefined && m[2] !== '' ? parseInt(m[2], 10) : null
     if (!isNaN(start) && start >= 0 && start < avail) {
-      const end = Math.min(endRaw ?? avail - 1, avail - 1)
+      // Open-ended range from a growing transcode output: stay open and feed
+      // the live output as ffmpeg writes it (see serveGrowing for why a
+      // bounded response would make the client treat the track as ended).
+      if (endRaw == null) {
+        res.writeHead(206, {
+          'Content-Type': mime,
+          'Content-Range': `bytes ${start}-*/*`,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'no-store'
+        })
+        const reader = new GrowingFileReader({ candidates: [session.outputPath], done, offset: start })
+        session.addReader(reader)
+        reader.pipe(res)
+        return
+      }
+      const end = Math.min(endRaw, avail - 1)
       res.writeHead(206, {
         'Content-Type': mime,
         'Content-Range': `bytes ${start}-${end}/*`,
